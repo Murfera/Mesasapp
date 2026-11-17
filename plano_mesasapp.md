@@ -167,7 +167,8 @@ Ideias para depois (não entram na v1):
 ## 8. Combinados de trabalho
 
 - Testar no **Moto G73 por depuração Wi-Fi**; não criar emulador/máquina virtual agora.
-- Commit e push só quando o usuário pedir.
+- **Git a cada etapa salva**, para dar para voltar atrás e comparar (pedido dele em
+  2026-11-17). Repositório privado e separado: https://github.com/Murfera/Mesasapp.
 - Build release só quando ele disser que é a oficial.
 - Apresentar opções e custo antes de implementar caminho com bifurcação.
 
@@ -204,4 +205,24 @@ Ideias para depois (não entram na v1):
 3. Pix (copia e cola + QR) e compartilhar no WhatsApp.
 4. Tela de Configurações (empresa, chave Pix, horas e frete padrão) — o `ConfigStore`
    já existe e é lido pela tela principal, falta a tela para editar.
-5. Instalar no Moto G73 (falta o IP:porta da Depuração por Wi-Fi).
+5. Cadastrar o estoque real no celular e conferir o cálculo na tela.
+
+### Como conectar no celular (funcionou em 2026-11-17)
+
+```powershell
+$adb="$env:LOCALAPPDATA\Android\Sdk\platform-toolsdb.exe"
+& $adb pair 192.168.15.9:<porta de pareamento> <codigo>   # tela de pareamento aberta
+& $adb mdns services        # depois de parear, mostra a porta de conexao
+& $adb connect 192.168.15.9:<porta de conexao>
+```
+
+A porta e o código de pareamento **só valem enquanto a janela está aberta** no
+celular. Depois de parear, o `adb mdns services` revela a porta de conexão
+sozinho — não precisa pedir o segundo número. Build:
+`$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"`.
+
+### Testado no aparelho
+
+- 2026-11-17, Moto G73: app instala, abre sem travar e mostra o catálogo semeado
+  (jogo, mesa e cadeira, tudo zerado). Corrigido na hora: a barra do TOTAL ficava
+  atrás da barra de navegação do Android (commit `ff2bea7`).
