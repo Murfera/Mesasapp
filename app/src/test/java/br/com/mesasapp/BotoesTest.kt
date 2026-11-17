@@ -65,15 +65,21 @@ class BotoesTest {
         material: String,
         cor: String,
         quantidade: String,
-        diaria: String
+        diaria: String,
+        reposicao: String? = null
     ) {
         irPara("Estoque")
         regra.onNodeWithTag("botao_cadastrar_modelo").performClick()
         regra.waitForIdle()
 
-        regra.onNodeWithText(categoria).performClick()
-        regra.onNodeWithText(material).performClick()
-        regra.onNodeWithText(cor).performClick()
+        // Pelos marcadores, e nao pelo texto: o mesmo "Metal" aparece nos cartoes
+        // dos modelos ja cadastrados, atras do formulario.
+        rolarAte("form_modelo", "chip_$categoria")
+        regra.onNodeWithTag("chip_$categoria").performClick()
+        rolarAte("form_modelo", "chip_$material")
+        regra.onNodeWithTag("chip_$material").performClick()
+        rolarAte("form_modelo", "chip_$cor")
+        regra.onNodeWithTag("chip_$cor").performClick()
 
         rolarAte("form_modelo", "campo_quantidade")
         regra.onNodeWithTag("campo_quantidade").performTextReplacement(quantidade)
@@ -81,6 +87,11 @@ class BotoesTest {
         // O formulario rola: o campo da diaria so existe depois de chegar nele.
         rolarAte("form_modelo", "campo_diaria")
         regra.onNodeWithTag("campo_diaria").performTextReplacement(diaria)
+
+        if (reposicao != null) {
+            rolarAte("form_modelo", "campo_reposicao")
+            regra.onNodeWithTag("campo_reposicao").performTextReplacement(reposicao)
+        }
 
         rolarAte("form_modelo", "botao_salvar_modelo")
         regra.onNodeWithTag("botao_salvar_modelo").performClick()
@@ -126,5 +137,77 @@ class BotoesTest {
         regra.onNodeWithTag("botao_orcamento").assertIsDisplayed().performClick()
         regra.waitForIdle()
         esperarTexto("Escolha pelo menos um item")
+    }
+
+    @Test
+    fun configuracoes_salvam_a_chave_pix() {
+        regra.onNodeWithTag("botao_config").performClick()
+        regra.waitForIdle()
+
+        rolarAte("lista_config", "campo_chave_pix")
+        regra.onNodeWithTag("campo_chave_pix").performTextReplacement("11999998888")
+        regra.onNodeWithTag("campo_recebedor").performTextReplacement("Murf Eventos")
+        regra.onNodeWithTag("campo_cidade").performTextReplacement("Campinas")
+
+        rolarAte("lista_config", "botao_salvar_config")
+        regra.onNodeWithTag("botao_salvar_config").performClick()
+
+        esperarTexto("Configuracoes salvas")
+    }
+
+    @Test
+    fun pedido_confirmado_vira_cobranca_pix_e_devolucao_soma_a_quebra() {
+        // Estoque: cadeira a 50,00 de diaria e 120,00 de reposicao.
+        cadastrarModelo("Cadeira", "Metal", "Vermelha", quantidade = "9", diaria = "50", reposicao = "120")
+
+        // Sem chave Pix cadastrada a cobranca nao tem o que gerar.
+        regra.onNodeWithText("Inicio").performClick()
+        regra.waitForIdle()
+        regra.onNodeWithTag("botao_config").performClick()
+        regra.waitForIdle()
+        rolarAte("lista_config", "campo_chave_pix")
+        regra.onNodeWithTag("campo_chave_pix").performTextReplacement("11999998888")
+        regra.onNodeWithTag("campo_recebedor").performTextReplacement("Murf Eventos")
+        regra.onNodeWithTag("campo_cidade").performTextReplacement("Campinas")
+        rolarAte("lista_config", "botao_salvar_config")
+        regra.onNodeWithTag("botao_salvar_config").performClick()
+        esperarTexto("Configuracoes salvas")
+
+        // Pedido com 2 cadeiras = 100,00.
+        irPara("Novo")
+        val nome = "Cadeira de metal sem braco vermelha"
+        rolarAte("lista_novo", "mais_$nome")
+        regra.onNodeWithTag("mais_$nome").performClick()
+        regra.onNodeWithTag("mais_$nome").performClick()
+        esperarTexto("100,00")
+
+        regra.onNodeWithTag("botao_confirmar").performClick()
+        regra.waitForIdle()
+
+        // O pedido aparece na lista e abre no detalhe.
+        irPara("Pedidos")
+        rolarAte("lista_pedidos", "pedido_1")
+        regra.onNodeWithTag("pedido_1").performClick()
+        regra.waitForIdle()
+        esperarTexto("100,00")
+
+        // Pix: o copia e cola sai pronto, com o cabecalho do padrao do Banco Central.
+        rolarAte("lista_pedido", "botao_pix")
+        regra.onNodeWithTag("botao_pix").performClick()
+        regra.waitForIdle()
+        esperarTexto("000201")
+        regra.onNodeWithText("Fechar").performClick()
+        regra.waitForIdle()
+
+        // Devolucao com uma cadeira quebrada: 100,00 + 120,00 = 220,00.
+        rolarAte("lista_pedido", "botao_devolucao")
+        regra.onNodeWithTag("botao_devolucao").performClick()
+        regra.waitForIdle()
+        regra.onNodeWithTag("quebradas_$nome").performTextReplacement("1")
+        regra.onNodeWithTag("voltaram_$nome").performTextReplacement("1")
+        regra.onNodeWithTag("confirmar_devolucao").performClick()
+        regra.waitForIdle()
+
+        esperarTexto("220,00")
     }
 }

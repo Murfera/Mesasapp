@@ -19,15 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import br.com.mesasapp.di.AppContainer
 import br.com.mesasapp.ui.agenda.AgendaScreen
+import br.com.mesasapp.ui.config.ConfigScreen
 import br.com.mesasapp.ui.inicio.InicioScreen
 import br.com.mesasapp.ui.itens.ItensScreen
 import br.com.mesasapp.ui.novo.NovoPedidoScreen
+import br.com.mesasapp.ui.pedido.PedidoScreen
 import br.com.mesasapp.ui.pedidos.PedidosScreen
 
 /** As cinco abas do menu de baixo. */
@@ -37,6 +41,14 @@ enum class Aba(val rota: String, val titulo: String, val icone: ImageVector) {
     NOVO("novo", "Novo", Icons.Default.AddCircleOutline),
     AGENDA("agenda", "Agenda", Icons.Default.CalendarMonth),
     ESTOQUE("estoque", "Estoque", Icons.Default.Inventory2)
+}
+
+/** Telas que nao sao abas: abrem por cima e voltam para onde estavam. */
+private object Telas {
+    const val PEDIDO = "pedido/{id}"
+    const val CONFIG = "config"
+
+    fun pedido(id: Long) = "pedido/$id"
 }
 
 @Composable
@@ -81,11 +93,17 @@ fun MesasappApp(container: AppContainer) {
                     aoNovoPedido = { navController.navegarParaAba(Aba.NOVO) },
                     aoVerPedidos = { navController.navegarParaAba(Aba.PEDIDOS) },
                     aoVerAgenda = { navController.navegarParaAba(Aba.AGENDA) },
-                    aoVerEstoque = { navController.navegarParaAba(Aba.ESTOQUE) }
+                    aoVerEstoque = { navController.navegarParaAba(Aba.ESTOQUE) },
+                    aoAbrirConfig = { navController.navigate(Telas.CONFIG) },
+                    aoAbrirPedido = { navController.navigate(Telas.pedido(it)) }
                 )
             }
             composable(Aba.PEDIDOS.rota) {
-                PedidosScreen(container = container, aoNovoPedido = { navController.navegarParaAba(Aba.NOVO) })
+                PedidosScreen(
+                    container = container,
+                    aoNovoPedido = { navController.navegarParaAba(Aba.NOVO) },
+                    aoAbrirPedido = { navController.navigate(Telas.pedido(it)) }
+                )
             }
             composable(Aba.NOVO.rota) {
                 NovoPedidoScreen(
@@ -95,10 +113,26 @@ fun MesasappApp(container: AppContainer) {
                 )
             }
             composable(Aba.AGENDA.rota) {
-                AgendaScreen(container = container)
+                AgendaScreen(
+                    container = container,
+                    aoAbrirPedido = { navController.navigate(Telas.pedido(it)) }
+                )
             }
             composable(Aba.ESTOQUE.rota) {
                 ItensScreen(container = container)
+            }
+            composable(
+                route = Telas.PEDIDO,
+                arguments = listOf(navArgument("id") { type = NavType.LongType })
+            ) { entrada ->
+                PedidoScreen(
+                    container = container,
+                    pedidoId = entrada.arguments?.getLong("id") ?: 0L,
+                    aoVoltar = { navController.popBackStack() }
+                )
+            }
+            composable(Telas.CONFIG) {
+                ConfigScreen(container = container, aoVoltar = { navController.popBackStack() })
             }
         }
     }

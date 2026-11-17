@@ -356,10 +356,12 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
                 item {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Categoria.entries.forEach { opcao ->
+                            val rotulo = if (opcao == Categoria.MESA) "Mesa" else "Cadeira"
                             FilterChip(
                                 selected = categoria == opcao,
                                 onClick = { categoria = opcao },
-                                label = { Text(if (opcao == Categoria.MESA) "Mesa" else "Cadeira") }
+                                label = { Text(rotulo) },
+                                modifier = Modifier.testTag("chip_$rotulo")
                             )
                         }
                     }
@@ -373,7 +375,8 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
                                 FilterChip(
                                     selected = material == opcao,
                                     onClick = { material = opcao },
-                                    label = { Text(rotuloMaterial(opcao)) }
+                                    label = { Text(rotuloMaterial(opcao)) },
+                                    modifier = Modifier.testTag("chip_${rotuloMaterial(opcao)}")
                                 )
                             }
                         }
@@ -388,12 +391,14 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
                                 FilterChip(
                                     selected = !comBraco,
                                     onClick = { comBraco = false },
-                                    label = { Text("Sem braco") }
+                                    label = { Text("Sem braco") },
+                                    modifier = Modifier.testTag("chip_Sem braco")
                                 )
                                 FilterChip(
                                     selected = comBraco,
                                     onClick = { comBraco = true },
-                                    label = { Text("Com braco") }
+                                    label = { Text("Com braco") },
+                                    modifier = Modifier.testTag("chip_Com braco")
                                 )
                             }
                         }
@@ -408,7 +413,8 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
                                 FilterChip(
                                     selected = cor == opcao,
                                     onClick = { cor = opcao },
-                                    label = { Text(opcao) }
+                                    label = { Text(opcao) },
+                                    modifier = Modifier.testTag("chip_$opcao")
                                 )
                             }
                         }
@@ -456,7 +462,7 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
                         prefix = { Text("R$ ") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("campo_reposicao")
                     )
                 }
 

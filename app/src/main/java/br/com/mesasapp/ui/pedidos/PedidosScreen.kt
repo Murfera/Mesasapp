@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +47,11 @@ import br.com.mesasapp.util.formatAsBrl
 
 /** Lista de pedidos com busca e filtro por situacao. */
 @Composable
-fun PedidosScreen(container: AppContainer, aoNovoPedido: () -> Unit) {
+fun PedidosScreen(
+    container: AppContainer,
+    aoNovoPedido: () -> Unit,
+    aoAbrirPedido: (Long) -> Unit
+) {
     val viewModel: PedidosViewModel = viewModel(
         factory = viewModelFactory { initializer { PedidosViewModel(container.repository) } }
     )
@@ -62,7 +67,7 @@ fun PedidosScreen(container: AppContainer, aoNovoPedido: () -> Unit) {
 
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).testTag("lista_pedidos"),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -115,6 +120,7 @@ fun PedidosScreen(container: AppContainer, aoNovoPedido: () -> Unit) {
             items(estado.pedidos, key = { it.id }) { pedido ->
                 CartaoPedido(
                     pedido = pedido,
+                    aoAbrir = { aoAbrirPedido(pedido.id) },
                     aoMudarStatus = { viewModel.mudarStatus(pedido.id, it) }
                 )
             }
@@ -123,10 +129,14 @@ fun PedidosScreen(container: AppContainer, aoNovoPedido: () -> Unit) {
 }
 
 @Composable
-private fun CartaoPedido(pedido: LocacaoResumo, aoMudarStatus: (StatusLocacao) -> Unit) {
+private fun CartaoPedido(
+    pedido: LocacaoResumo,
+    aoAbrir: () -> Unit,
+    aoMudarStatus: (StatusLocacao) -> Unit
+) {
     var aberto by remember { mutableStateOf(false) }
 
-    Card(onClick = { aberto = !aberto }) {
+    Card(onClick = aoAbrir, modifier = Modifier.testTag("pedido_${pedido.id}")) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

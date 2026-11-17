@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,7 +45,9 @@ fun InicioScreen(
     aoNovoPedido: () -> Unit,
     aoVerPedidos: () -> Unit,
     aoVerAgenda: () -> Unit,
-    aoVerEstoque: () -> Unit
+    aoVerEstoque: () -> Unit,
+    aoAbrirConfig: () -> Unit,
+    aoAbrirPedido: (Long) -> Unit
 ) {
     val viewModel: InicioViewModel = viewModel(
         factory = viewModelFactory {
@@ -58,13 +63,18 @@ fun InicioScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column {
-                Text(
-                    estado.hoje.format(formatoDia).replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(estado.nomeNegocio, style = MaterialTheme.typography.headlineMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        estado.hoje.format(formatoDia).replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(estado.nomeNegocio, style = MaterialTheme.typography.headlineMedium)
+                }
+                IconButton(onClick = aoAbrirConfig, modifier = Modifier.testTag("botao_config")) {
+                    Icon(Icons.Default.Settings, contentDescription = "Configuracoes")
+                }
             }
         }
 
@@ -154,7 +164,7 @@ fun InicioScreen(
         } else {
             items(hoje.size) { indice ->
                 val (resumo, entrega) = hoje[indice]
-                LinhaEvento(resumo, entrega)
+                LinhaEvento(resumo, entrega) { aoAbrirPedido(resumo.id) }
             }
         }
 
@@ -176,7 +186,8 @@ fun InicioScreen(
             }
         } else {
             items(estado.proximos.size) { indice ->
-                LinhaEvento(estado.proximos[indice], entrega = true)
+                val proximo = estado.proximos[indice]
+                LinhaEvento(proximo, entrega = true) { aoAbrirPedido(proximo.id) }
             }
         }
     }
@@ -210,9 +221,9 @@ private fun CartaoNumero(
 }
 
 @Composable
-private fun LinhaEvento(resumo: LocacaoResumo, entrega: Boolean) {
+private fun LinhaEvento(resumo: LocacaoResumo, entrega: Boolean, aoAbrir: () -> Unit) {
     val quando = if (entrega) resumo.inicioEpochSeg else resumo.fimEpochSeg
-    Card {
+    Card(onClick = aoAbrir) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(

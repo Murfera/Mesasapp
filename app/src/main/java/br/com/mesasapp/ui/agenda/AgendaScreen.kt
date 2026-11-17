@@ -48,7 +48,7 @@ import java.util.Locale
  * escolhido. Nao conversa com o Google Agenda — isso ficou para depois.
  */
 @Composable
-fun AgendaScreen(container: AppContainer) {
+fun AgendaScreen(container: AppContainer, aoAbrirPedido: (Long) -> Unit) {
     val viewModel: AgendaViewModel = viewModel(
         factory = viewModelFactory { initializer { AgendaViewModel(container.repository) } }
     )
@@ -142,7 +142,7 @@ fun AgendaScreen(container: AppContainer) {
         } else {
             items(estado.eventosDoDia.size) { indice ->
                 val evento = estado.eventosDoDia[indice]
-                LinhaEvento(evento.pedido, evento.entrega)
+                LinhaEvento(evento.pedido, evento.entrega) { aoAbrirPedido(evento.pedido.id) }
             }
         }
     }
@@ -197,9 +197,9 @@ private fun Legenda(cor: androidx.compose.ui.graphics.Color, texto: String) {
 }
 
 @Composable
-private fun LinhaEvento(pedido: LocacaoResumo, entrega: Boolean) {
+private fun LinhaEvento(pedido: LocacaoResumo, entrega: Boolean, aoAbrir: () -> Unit) {
     val quando = if (entrega) pedido.inicioEpochSeg else pedido.fimEpochSeg
-    Card {
+    Card(onClick = aoAbrir) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(

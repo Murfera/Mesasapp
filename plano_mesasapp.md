@@ -231,14 +231,26 @@ entregue impossível de preencher.
   - Item já usado em locação não é excluído, é desativado — o histórico não pode
     ficar sem descrição.
 
+- 2026-11-17 (noite): **detalhe do pedido, devolução, Pix e Configurações prontos**.
+  - Tocar num pedido (na lista, na agenda ou no painel) abre o detalhe com valores,
+    peças reservadas, situação e compartilhamento por WhatsApp (`ACTION_SEND`).
+  - **Devolução**: quantas voltaram e quantas quebraram, por modelo. A quebra entra
+    no total pelo valor de reposição **congelado no pedido**, não pelo preço de hoje.
+  - **Pix**: BR Code estático montado no app (CRC-16/CCITT) + QR desenhado com ZXing,
+    tudo offline. Não avisa quando o cliente paga — a baixa é manual.
+  - **Configurações**: nome do negócio, chave Pix (chave, recebedor, cidade), frete
+    padrão e horas padrão de entrega e retirada. Engrenagem no canto do Início.
+  - Defeito achado pelos testes e corrigido: lista rolável dentro de `AlertDialog`
+    entra em **laço infinito de layout** e trava a tela. Diálogos com lista agora
+    são `Dialog` em tela cheia.
+  - 18 testes passando (5 de tela, 6 de dinheiro, 7 de Pix).
+
 ### Próximo passo
 
-1. Lista de locações, detalhe e mudança de status.
-2. Devolução com quebra e total refeito.
-3. Pix (copia e cola + QR) e compartilhar no WhatsApp.
-4. Tela de Configurações (empresa, chave Pix, horas e frete padrão) — o `ConfigStore`
-   já existe e é lido pela tela principal, falta a tela para editar.
-5. Cadastrar o estoque real no celular e conferir o cálculo na tela.
+1. Cadastrar o estoque real no celular e conferir o cálculo na tela.
+2. Regra de diária para vários dias (decisão do usuário pendente).
+3. Backup em JSON, no modelo do Finapp.
+4. Trocar a recriação do banco por migração de verdade **antes de publicar**.
 
 ### Como conectar no celular (funcionou em 2026-11-17)
 
