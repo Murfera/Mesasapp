@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mesa vista de frente com duas cadeiras. Vetor em vez de PNG: um unico arquivo
+  serve todas as densidades e ainda funciona como icone monocromatico.
+  O desenho ocupa a area segura do icone adaptativo (66 de 108 dp, centrado).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Tampo da mesa -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,50 H82 A2,2 0 0 1 82,56 H26 A2,2 0 0 1 26,50 Z" />
+    <!-- Pernas da mesa -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,56 h5 l3,22 h-5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M69,56 h5 l-3,22 h-5 Z" />
+    <!-- Cadeira da esquerda: encosto e assento -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,34 h5 v22 h-5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,58 h14 v4 h-14 Z" />
+    <!-- Cadeira da direita: encosto e assento -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M83,34 h5 v22 h-5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,58 h14 v4 h-14 Z" />
+</vector>

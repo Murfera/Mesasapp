@@ -1,0 +1,16 @@
+# Normaliza finais de linha: LF no repositorio, independente da maquina.
+* text=auto eol=lf
+
+# O gradlew precisa de LF para funcionar em Linux/macOS e em CI.
+gradlew text eol=lf
+
+# Scripts do Windows precisam de CRLF.
+*.bat text eol=crlf
+
+# Binarios: nunca converter.
+*.jar binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.keystore binary
+*.jks binary
