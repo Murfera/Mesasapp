@@ -46,6 +46,7 @@ data class ClienteEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val nome: String,
     val telefone: String,
+    val documento: String,
     val endereco: String,
     val observacoes: String
 )
@@ -59,7 +60,9 @@ data class LocacaoEntity(
     val clienteId: Long?,
     val clienteNome: String,
     val telefone: String,
+    val documento: String,
     val endereco: String,
+    val pontoReferencia: String,
     val inicioEpochSeg: Long,
     val fimEpochSeg: Long,
     val freteCentavos: Long,
@@ -120,6 +123,32 @@ data class LocacaoPecaEntity(
 /** Quanto de cada item esta reservado numa janela de datas. */
 data class ReservaPorItem(val itemId: Long, val quantidade: Int)
 
+/** Quantas pecas de cada item ja foram dadas como quebradas, somando o historico. */
+data class QuebraPorItem(val itemId: Long, val quantidade: Int)
+
+/**
+ * Cabecalho do pedido com os totais ja somados no SQL.
+ *
+ * As telas de lista, o painel e a agenda precisam do total de dezenas de pedidos
+ * ao mesmo tempo; carregar as linhas de cada um so para somar seria um N+1.
+ */
+data class LocacaoResumoEntity(
+    val id: Long,
+    val clienteNome: String,
+    val telefone: String,
+    val endereco: String,
+    val inicioEpochSeg: Long,
+    val fimEpochSeg: Long,
+    val status: br.com.mesasapp.domain.model.StatusLocacao,
+    val freteCentavos: Long,
+    val montagemCentavos: Long,
+    val descontoCentavos: Long,
+    val sinalCentavos: Long,
+    val subtotalCentavos: Long,
+    val quebrasCentavos: Long,
+    val itens: String?
+)
+
 // --- conversoes entre entidade e modelo de dominio ---
 
 fun ItemEntity.toModel() = Item(
@@ -135,17 +164,17 @@ fun Item.toEntity() = ItemEntity(
 fun ComboEntity.toModel() = Combo(id, nome, itemMesaId, itemCadeiraId, qtdCadeiras, precoDiariaCentavos, ativo)
 fun Combo.toEntity() = ComboEntity(id, nome, itemMesaId, itemCadeiraId, qtdCadeiras, precoDiariaCentavos, ativo)
 
-fun ClienteEntity.toModel() = Cliente(id, nome, telefone, endereco, observacoes)
-fun Cliente.toEntity() = ClienteEntity(id, nome, telefone, endereco, observacoes)
+fun ClienteEntity.toModel() = Cliente(id, nome, telefone, documento, endereco, observacoes)
+fun Cliente.toEntity() = ClienteEntity(id, nome, telefone, documento, endereco, observacoes)
 
 fun LocacaoEntity.toModel() = Locacao(
-    id, clienteId, clienteNome, telefone, endereco, inicioEpochSeg, fimEpochSeg,
+    id, clienteId, clienteNome, telefone, documento, endereco, pontoReferencia, inicioEpochSeg, fimEpochSeg,
     freteCentavos, montagemCentavos, descontoCentavos, sinalCentavos, caucaoCentavos,
     observacoes, status, criadoEmEpochSeg
 )
 
 fun Locacao.toEntity() = LocacaoEntity(
-    id, clienteId, clienteNome, telefone, endereco, inicioEpochSeg, fimEpochSeg,
+    id, clienteId, clienteNome, telefone, documento, endereco, pontoReferencia, inicioEpochSeg, fimEpochSeg,
     freteCentavos, montagemCentavos, descontoCentavos, sinalCentavos, caucaoCentavos,
     observacoes, status, criadoEmEpochSeg
 )

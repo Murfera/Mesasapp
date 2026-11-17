@@ -64,6 +64,7 @@ data class Cliente(
     val id: Long = 0,
     val nome: String,
     val telefone: String = "",
+    val documento: String = "",
     val endereco: String = "",
     val observacoes: String = ""
 )
@@ -105,12 +106,40 @@ data class LocacaoPeca(
     val totalQuebraCentavos: Long get() = quantidadeQuebrada * valorReposicaoCentavos
 }
 
+/**
+ * Resumo de um pedido com os totais ja calculados, para listas e paineis.
+ * [itens] e a descricao curta das linhas, para a lista nao precisar busca-las.
+ */
+data class LocacaoResumo(
+    val id: Long,
+    val clienteNome: String,
+    val telefone: String,
+    val endereco: String,
+    val inicioEpochSeg: Long,
+    val fimEpochSeg: Long,
+    val status: StatusLocacao,
+    val subtotalCentavos: Long,
+    val freteCentavos: Long,
+    val montagemCentavos: Long,
+    val descontoCentavos: Long,
+    val sinalCentavos: Long,
+    val quebrasCentavos: Long,
+    val itens: String
+) {
+    val totalCentavos: Long
+        get() = subtotalCentavos + freteCentavos + montagemCentavos - descontoCentavos + quebrasCentavos
+
+    val aReceberCentavos: Long get() = totalCentavos - sinalCentavos
+}
+
 data class Locacao(
     val id: Long = 0,
     val clienteId: Long? = null,
     val clienteNome: String = "",
     val telefone: String = "",
+    val documento: String = "",
     val endereco: String = "",
+    val pontoReferencia: String = "",
     val inicioEpochSeg: Long,
     val fimEpochSeg: Long,
     val freteCentavos: Long = 0,

@@ -9,9 +9,25 @@ Play Store. Tudo local (SQLite/Room), sem servidor e sem custo de operação.
 
 ---
 
-## 1. Princípio da interface
+## 1. Estrutura (revisada em 2026-11-17)
 
-A tela inicial é a **calculadora de orçamento**, não uma lista nem um menu.
+O usuário comparou com um app parecido (zaraeventos.web.app) e pediu a **mesma
+estrutura**: menu inferior com cinco abas, painel de abertura e o pedido dividido
+em blocos com o resumo do dinheiro fixo no rodapé. O que ficou **diferente de
+propósito**: o estoque continua simples e as cores são só **Branca, Preta,
+Vermelha e "Outra"** — ele achou o do amigo cheio de opção demais.
+
+| Aba | O que faz |
+|---|---|
+| Início | Painel: livres agora, entregas/retiradas de hoje, a receber, próximos eventos |
+| Pedidos | Lista com busca e filtro por situação; muda o status ali mesmo |
+| Novo | Cliente → Local → Datas e horários → Itens → Valores, com resumo fixo |
+| Agenda | Calendário do mês com pontos de entrega/retirada e o que acontece no dia |
+| Estoque | Modelos com livres/alugadas/quebradas, total, diária e reposição |
+
+A calculadora de orçamento virou a aba **Novo**, mantendo o princípio original:
+
+A tela de pedido é uma **calculadora**, não um formulário.
 A pessoa abre o app no meio de uma conversa de WhatsApp e precisa responder
 "10 jogos, 1 dia, quanto fica?" em menos de 5 segundos.
 

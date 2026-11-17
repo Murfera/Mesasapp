@@ -14,7 +14,7 @@ import androidx.room.RoomDatabase
         LocacaoLinhaEntity::class,
         LocacaoPecaEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class MesasappDatabase : RoomDatabase() {
@@ -34,8 +34,12 @@ abstract class MesasappDatabase : RoomDatabase() {
                     MesasappDatabase::class.java,
                     "mesasapp.db"
                 )
-                    // Chave estrangeira das linhas/pecas so vale com isso ligado.
                     .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
+                    // ATENCAO: enquanto o app nao foi publicado, mudanca de schema
+                    // recria o banco em vez de migrar. **Antes da primeira versao na
+                    // Play Store isto tem que virar migracao de verdade**, senao uma
+                    // atualizacao apaga os pedidos de quem ja usa.
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                     .also { instancia = it }
             }

@@ -84,6 +84,54 @@ interface LocacaoDao {
     @Query("SELECT * FROM locacao ORDER BY inicioEpochSeg DESC")
     fun observarTodas(): Flow<List<LocacaoEntity>>
 
+    /**
+     * Todos os pedidos com os totais somados no proprio SQL, inclusive a
+     * descricao curta das linhas. Uma consulta so alimenta a lista de pedidos,
+     * o painel de abertura e a agenda, sem buscar as linhas pedido a pedido.
+     */
+    @Query(
+        """
+        SELECT
+            l.id AS id,
+            l.clienteNome AS clienteNome,
+            l.telefone AS telefone,
+            l.endereco AS endereco,
+            l.inicioEpochSeg AS inicioEpochSeg,
+            l.fimEpochSeg AS fimEpochSeg,
+            l.status AS status,
+            l.freteCentavos AS freteCentavos,
+            l.montagemCentavos AS montagemCentavos,
+            l.descontoCentavos AS descontoCentavos,
+            l.sinalCentavos AS sinalCentavos,
+            IFNULL((
+                SELECT SUM(li.quantidade * li.precoDiariaCentavos)
+                FROM locacao_linha li WHERE li.locacaoId = l.id
+            ), 0) AS subtotalCentavos,
+            IFNULL((
+                SELECT SUM(p.quantidadeQuebrada * p.valorReposicaoCentavos)
+                FROM locacao_peca p WHERE p.locacaoId = l.id
+            ), 0) AS quebrasCentavos,
+            (
+                SELECT GROUP_CONCAT(li.quantidade || 'x ' || li.descricao, ', ')
+                FROM locacao_linha li WHERE li.locacaoId = l.id
+            ) AS itens
+        FROM locacao l
+        ORDER BY l.inicioEpochSeg DESC
+        """
+    )
+    fun observarResumos(): Flow<List<LocacaoResumoEntity>>
+
+    /** Quantas pecas de cada item ja foram dadas como quebradas. */
+    @Query(
+        """
+        SELECT itemId AS itemId, SUM(quantidadeQuebrada) AS quantidade
+        FROM locacao_peca
+        WHERE quantidadeQuebrada > 0
+        GROUP BY itemId
+        """
+    )
+    fun observarQuebras(): Flow<List<QuebraPorItem>>
+
     @Query("SELECT * FROM locacao WHERE status IN ('CONFIRMADA', 'ENTREGUE') ORDER BY inicioEpochSeg")
     fun observarAgenda(): Flow<List<LocacaoEntity>>
 

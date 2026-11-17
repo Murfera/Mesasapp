@@ -1,6 +1,8 @@
 package br.com.mesasapp.ui.itens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -8,30 +10,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,21 +43,27 @@ import br.com.mesasapp.domain.model.Categoria
 import br.com.mesasapp.domain.model.Combo
 import br.com.mesasapp.domain.model.Item
 import br.com.mesasapp.domain.model.Material
-import br.com.mesasapp.util.formatAsBrl
+import br.com.mesasapp.ui.theme.MesasappTheme
 import br.com.mesasapp.util.formatAsPlain
 import br.com.mesasapp.util.toCentsOrNull
 
-/** Estoque: o que existe, quanto custa a diaria e quanto custa repor se quebrar. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Cores oferecidas no cadastro. Poucas de proposito: o que a locadora tem de
+ * verdade e preto, branco e vermelho. "Outra" existe para o caso raro, sem
+ * encher a tela de opcoes que ninguem usa.
+ */
+private val CORES = listOf("Branca", "Preta", "Vermelha")
+
+/** Estoque: o que existe, o que esta na rua, o que quebrou e quanto custa. */
 @Composable
-fun ItensScreen(container: AppContainer, aoVoltar: () -> Unit) {
+fun ItensScreen(container: AppContainer) {
     val viewModel: ItensViewModel = viewModel(
         factory = viewModelFactory { initializer { ItensViewModel(container.repository) } }
     )
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
-    var editando by remember { mutableStateOf<Item?>(null) }
+    var cadastrando by remember { mutableStateOf(false) }
     var editandoCombo by remember { mutableStateOf<Combo?>(null) }
 
     LaunchedEffect(estado.mensagem) {
@@ -75,119 +73,90 @@ fun ItensScreen(container: AppContainer, aoVoltar: () -> Unit) {
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Estoque") },
-                navigationIcon = {
-                    IconButton(onClick = aoVoltar) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { editando = Item(nome = "", categoria = Categoria.CADEIRA) }) {
-                Icon(Icons.Default.Add, contentDescription = "Novo item")
-            }
-        }
-    ) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Text("Itens", style = MaterialTheme.typography.titleMedium) }
+            item { Text("Estoque", style = MaterialTheme.typography.headlineMedium) }
 
-            items(estado.itens, key = { "i${it.id}" }) { item ->
-                Card(onClick = { editando = item }) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                if (item.ativo) item.nome else "${item.nome} (inativo)",
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            Text(
-                                "${item.quantidadeTotal} em estoque · diaria ${item.precoDiariaCentavos.formatAsBrl()}" +
-                                    " · reposicao ${item.valorReposicaoCentavos.formatAsBrl()}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        IconButton(onClick = { viewModel.excluirItem(item) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Excluir")
-                        }
-                    }
-                }
+            item {
+                CabecalhoGrupo("Mesas", estado.totalMesas, estado.mesas.size)
+            }
+            items(estado.mesas, key = { "m${it.item.id}" }) { linha ->
+                CartaoItem(linha, viewModel)
             }
 
             item {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                CabecalhoGrupo("Cadeiras", estado.totalCadeiras, estado.cadeiras.size)
+            }
+            items(estado.cadeiras, key = { "c${it.item.id}" }) { linha ->
+                CartaoItem(linha, viewModel)
+            }
+
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Jogos", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        val mesa = estado.itens.firstOrNull { it.categoria == Categoria.MESA }
-                        val cadeira = estado.itens.firstOrNull { it.categoria == Categoria.CADEIRA }
-                        if (mesa != null && cadeira != null) {
-                            editandoCombo = Combo(itemMesaId = mesa.id, itemCadeiraId = cadeira.id)
+                    TextButton(
+                        onClick = {
+                            val mesa = estado.todosItens.firstOrNull { it.categoria == Categoria.MESA }
+                            val cadeira = estado.todosItens.firstOrNull { it.categoria == Categoria.CADEIRA }
+                            if (mesa != null && cadeira != null) {
+                                editandoCombo = Combo(itemMesaId = mesa.id, itemCadeiraId = cadeira.id)
+                            }
                         }
-                    }) { Text("Novo jogo") }
+                    ) { Text("Novo jogo") }
                 }
             }
 
-            items(estado.combos, key = { "c${it.id}" }) { combo ->
-                val mesa = estado.itens.firstOrNull { it.id == combo.itemMesaId }
-                val cadeira = estado.itens.firstOrNull { it.id == combo.itemCadeiraId }
+            items(estado.combos, key = { "j${it.id}" }) { combo ->
+                val mesa = estado.todosItens.firstOrNull { it.id == combo.itemMesaId }
+                val cadeira = estado.todosItens.firstOrNull { it.id == combo.itemCadeiraId }
                 Card(onClick = { editandoCombo = combo }) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(combo.nome, style = MaterialTheme.typography.titleSmall)
                             Text(
-                                "1 ${mesa?.nome ?: "?"} + ${combo.qtdCadeiras} ${cadeira?.nome ?: "?"}" +
-                                    " · diaria ${combo.precoDiariaCentavos.formatAsBrl()}",
+                                "1 ${mesa?.nome ?: "?"} + ${combo.qtdCadeiras} ${cadeira?.nome ?: "?"} · " +
+                                    "${combo.precoDiariaCentavos.formatAsPlain()}/dia",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = { viewModel.excluirCombo(combo) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Excluir")
-                        }
+                        TextButton(onClick = { viewModel.removerCombo(combo) }) { Text("Remover") }
                     }
                 }
             }
 
             item {
                 Text(
-                    "O jogo nao tem estoque proprio: alugar um jogo baixa 1 mesa e as cadeiras dele " +
-                        "do estoque real, para a mesma cadeira nunca ser alugada duas vezes.",
+                    "O jogo nao tem estoque proprio: alugar um jogo baixa 1 mesa e as cadeiras dele do " +
+                        "estoque real, para a mesma cadeira nunca sair em dois pedidos.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    }
 
-    editando?.let { item ->
-        DialogoItem(
-            item = item,
-            aoFechar = { editando = null },
-            aoSalvar = { viewModel.salvarItem(it); editando = null }
-        )
+            item {
+                if (cadastrando) {
+                    FormularioItem(
+                        aoCancelar = { cadastrando = false },
+                        aoSalvar = { viewModel.salvarItem(it); cadastrando = false }
+                    )
+                } else {
+                    Button(onClick = { cadastrando = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Cadastrar modelo")
+                    }
+                }
+            }
+        }
     }
 
     editandoCombo?.let { combo ->
         DialogoCombo(
             combo = combo,
-            itens = estado.itens,
+            itens = estado.todosItens,
             aoFechar = { editandoCombo = null },
             aoSalvar = { viewModel.salvarCombo(it); editandoCombo = null }
         )
@@ -195,88 +164,230 @@ fun ItensScreen(container: AppContainer, aoVoltar: () -> Unit) {
 }
 
 @Composable
-private fun DialogoItem(item: Item, aoFechar: () -> Unit, aoSalvar: (Item) -> Unit) {
-    var nome by remember { mutableStateOf(item.nome) }
-    var categoria by remember { mutableStateOf(item.categoria) }
-    var material by remember { mutableStateOf(item.material) }
-    var cor by remember { mutableStateOf(item.cor) }
-    var comBraco by remember { mutableStateOf(item.comBraco ?: false) }
-    var quantidade by remember { mutableStateOf(item.quantidadeTotal.toString()) }
-    var diaria by remember { mutableStateOf(if (item.precoDiariaCentavos > 0) item.precoDiariaCentavos.formatAsPlain() else "") }
-    var reposicao by remember { mutableStateOf(if (item.valorReposicaoCentavos > 0) item.valorReposicaoCentavos.formatAsPlain() else "") }
+private fun CabecalhoGrupo(titulo: String, total: Int, modelos: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(titulo, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(
+            "$total no total · $modelos ${if (modelos == 1) "modelo" else "modelos"}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-    AlertDialog(
-        onDismissRequest = aoFechar,
-        title = { Text(if (item.id == 0L) "Novo item" else "Editar item") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Categoria.entries.forEach { opcao ->
-                        FilterChip(
-                            selected = categoria == opcao,
-                            onClick = { categoria = opcao },
-                            label = { Text(if (opcao == Categoria.MESA) "Mesa" else "Cadeira") }
-                        )
-                    }
+@Composable
+private fun CartaoItem(linha: ItemNoEstoque, viewModel: ItensViewModel) {
+    val item = linha.item
+
+    Card {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                if (item.ativo) item.nome else "${item.nome} (inativo)",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                AssistChip(onClick = {}, label = { Text(item.material.name.lowercase().replaceFirstChar { it.uppercase() }) })
+                when (item.comBraco) {
+                    true -> AssistChip(onClick = {}, label = { Text("Com braco") })
+                    false -> AssistChip(onClick = {}, label = { Text("Sem braco") })
+                    null -> Unit
                 }
-                OutlinedTextField(nome, { nome = it }, label = { Text("Nome") }, singleLine = true)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Material.entries.forEach { opcao ->
-                        FilterChip(
-                            selected = material == opcao,
-                            onClick = { material = opcao },
-                            label = { Text(opcao.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
-                        )
-                    }
-                }
-                OutlinedTextField(cor, { cor = it }, label = { Text("Cor") }, singleLine = true)
-                if (categoria == Categoria.CADEIRA) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Com braco", modifier = Modifier.weight(1f))
-                        Switch(checked = comBraco, onCheckedChange = { comBraco = it })
-                    }
-                }
-                OutlinedTextField(
-                    quantidade, { quantidade = it.filter { c -> c.isDigit() } },
-                    label = { Text("Quantidade em estoque") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                OutlinedTextField(
-                    diaria, { diaria = it }, label = { Text("Preco da diaria") }, prefix = { Text("R$ ") },
-                    singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
-                OutlinedTextField(
-                    reposicao, { reposicao = it }, label = { Text("Valor de reposicao (quebra)") },
-                    prefix = { Text("R$ ") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                if (item.cor.isNotBlank()) AssistChip(onClick = {}, label = { Text(item.cor) })
+            }
+
+            if (item.quantidadeTotal > 0) {
+                LinearProgressIndicator(
+                    progress = { linha.livres.toFloat() / item.quantidadeTotal },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            Row {
+                Numero("Livres agora", linha.livres.toString(), MesasappTheme.estado.ok, Modifier.weight(1f))
+                Numero("Alugadas", linha.alugadas.toString(), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
+                Numero("Quebradas", linha.quebradas.toString(), MesasappTheme.estado.erro, Modifier.weight(1f))
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CampoNumero(
+                    rotulo = "Total",
+                    valor = item.quantidadeTotal.toString(),
+                    modifier = Modifier.weight(1f)
+                ) { texto -> viewModel.salvarItem(item.copy(quantidadeTotal = texto.toIntOrNull() ?: 0)) }
+
+                CampoNumero(
+                    rotulo = "Diaria R$",
+                    valor = if (item.precoDiariaCentavos > 0) item.precoDiariaCentavos.formatAsPlain() else "",
+                    decimal = true,
+                    modifier = Modifier.weight(1f)
+                ) { texto -> viewModel.salvarItem(item.copy(precoDiariaCentavos = texto.toCentsOrNull() ?: 0)) }
+
+                CampoNumero(
+                    rotulo = "Reposicao R$",
+                    valor = if (item.valorReposicaoCentavos > 0) item.valorReposicaoCentavos.formatAsPlain() else "",
+                    decimal = true,
+                    modifier = Modifier.weight(1f)
+                ) { texto -> viewModel.salvarItem(item.copy(valorReposicaoCentavos = texto.toCentsOrNull() ?: 0)) }
+            }
+
+            Row {
+                if (!item.ativo) {
+                    TextButton(onClick = { viewModel.reativarItem(item) }) { Text("Reativar") }
+                }
+                TextButton(onClick = { viewModel.removerItem(item) }) { Text("Remover modelo") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Numero(
+    rotulo: String,
+    valor: String,
+    cor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        Text(rotulo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(valor, style = MaterialTheme.typography.titleLarge, color = cor, fontWeight = FontWeight.Bold)
+    }
+}
+
+/**
+ * Campo que guarda o texto enquanto a pessoa digita e so avisa quem salva.
+ * Sem o estado local, apagar o campo salvaria zero e o cursor pularia.
+ */
+@Composable
+private fun CampoNumero(
+    rotulo: String,
+    valor: String,
+    decimal: Boolean = false,
+    modifier: Modifier = Modifier,
+    aoMudar: (String) -> Unit
+) {
+    var texto by remember(valor) { mutableStateOf(valor) }
+
+    OutlinedTextField(
+        value = texto,
+        onValueChange = { novo ->
+            texto = if (decimal) novo.filter { it.isDigit() || it == ',' || it == '.' } else novo.filter { it.isDigit() }
+            aoMudar(texto)
         },
-        confirmButton = {
-            Button(
-                enabled = nome.isNotBlank(),
-                onClick = {
-                    aoSalvar(
-                        item.copy(
-                            nome = nome.trim(),
-                            categoria = categoria,
-                            material = material,
-                            comBraco = if (categoria == Categoria.CADEIRA) comBraco else null,
-                            cor = cor.trim(),
-                            quantidadeTotal = quantidade.toIntOrNull() ?: 0,
-                            precoDiariaCentavos = diaria.toCentsOrNull() ?: 0,
-                            valorReposicaoCentavos = reposicao.toCentsOrNull() ?: 0,
-                            ativo = true
-                        )
+        label = { Text(rotulo, style = MaterialTheme.typography.labelSmall) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number
+        ),
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun FormularioItem(aoCancelar: () -> Unit, aoSalvar: (Item) -> Unit) {
+    var categoria by remember { mutableStateOf(Categoria.CADEIRA) }
+    var material by remember { mutableStateOf(Material.PLASTICO) }
+    var comBraco by remember { mutableStateOf(false) }
+    var cor by remember { mutableStateOf(CORES.first()) }
+    var outraCor by remember { mutableStateOf("") }
+    var quantidade by remember { mutableStateOf("") }
+    var diaria by remember { mutableStateOf("") }
+    var reposicao by remember { mutableStateOf("") }
+
+    val corFinal = if (cor == "Outra") outraCor.trim() else cor
+    val nome = buildString {
+        append(if (categoria == Categoria.MESA) "Mesa" else "Cadeira")
+        append(" de ${material.name.lowercase()}")
+        if (categoria == Categoria.CADEIRA) append(if (comBraco) " com braco" else " sem braco")
+        if (corFinal.isNotBlank()) append(" ${corFinal.lowercase()}")
+    }
+
+    Card {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Cadastrar modelo", style = MaterialTheme.typography.titleMedium)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Categoria.entries.forEach { opcao ->
+                    FilterChip(
+                        selected = categoria == opcao,
+                        onClick = { categoria = opcao },
+                        label = { Text(if (opcao == Categoria.MESA) "Mesa" else "Cadeira") }
                     )
                 }
-            ) { Text("Salvar") }
-        },
-        dismissButton = { TextButton(onClick = aoFechar) { Text("Cancelar") } }
-    )
+            }
+
+            Text("Material", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Material.entries.forEach { opcao ->
+                    FilterChip(
+                        selected = material == opcao,
+                        onClick = { material = opcao },
+                        label = { Text(opcao.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    )
+                }
+            }
+
+            if (categoria == Categoria.CADEIRA) {
+                Text("Braco", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !comBraco, onClick = { comBraco = false }, label = { Text("Sem braco") })
+                    FilterChip(selected = comBraco, onClick = { comBraco = true }, label = { Text("Com braco") })
+                }
+            }
+
+            Text("Cor", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                (CORES + "Outra").forEach { opcao ->
+                    FilterChip(
+                        selected = cor == opcao,
+                        onClick = { cor = opcao },
+                        label = { Text(opcao) }
+                    )
+                }
+            }
+            if (cor == "Outra") {
+                OutlinedTextField(
+                    outraCor, { outraCor = it },
+                    label = { Text("Qual cor") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CampoNumero("Quantidade", quantidade, modifier = Modifier.weight(1f)) { quantidade = it }
+                CampoNumero("Diaria R$", diaria, decimal = true, modifier = Modifier.weight(1f)) { diaria = it }
+                CampoNumero("Reposicao R$", reposicao, decimal = true, modifier = Modifier.weight(1f)) { reposicao = it }
+            }
+
+            Text(
+                "Vai aparecer como: $nome",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = aoCancelar) { Text("Cancelar") }
+                Button(
+                    enabled = corFinal.isNotBlank(),
+                    onClick = {
+                        aoSalvar(
+                            Item(
+                                nome = nome.replaceFirstChar { it.uppercase() },
+                                categoria = categoria,
+                                material = material,
+                                comBraco = if (categoria == Categoria.CADEIRA) comBraco else null,
+                                cor = corFinal,
+                                quantidadeTotal = quantidade.toIntOrNull() ?: 0,
+                                precoDiariaCentavos = diaria.toCentsOrNull() ?: 0,
+                                valorReposicaoCentavos = reposicao.toCentsOrNull() ?: 0
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Adicionar ao estoque") }
+            }
+        }
+    }
 }
 
 @Composable
@@ -290,7 +401,7 @@ private fun DialogoCombo(combo: Combo, itens: List<Item>, aoFechar: () -> Unit, 
     val mesas = itens.filter { it.categoria == Categoria.MESA }
     val cadeiras = itens.filter { it.categoria == Categoria.CADEIRA }
 
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = aoFechar,
         title = { Text(if (combo.id == 0L) "Novo jogo" else "Editar jogo") },
         text = {
@@ -322,16 +433,10 @@ private fun DialogoCombo(combo: Combo, itens: List<Item>, aoFechar: () -> Unit, 
                     }
                 }
 
-                OutlinedTextField(
-                    qtdCadeiras, { qtdCadeiras = it.filter { c -> c.isDigit() } },
-                    label = { Text("Cadeiras por jogo") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                OutlinedTextField(
-                    diaria, { diaria = it }, label = { Text("Preco da diaria do jogo") },
-                    prefix = { Text("R$ ") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CampoNumero("Cadeiras por jogo", qtdCadeiras, modifier = Modifier.weight(1f)) { qtdCadeiras = it }
+                    CampoNumero("Diaria R$", diaria, decimal = true, modifier = Modifier.weight(1f)) { diaria = it }
+                }
             }
         },
         confirmButton = {

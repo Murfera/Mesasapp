@@ -13,6 +13,7 @@ import br.com.mesasapp.domain.model.Locacao
 import br.com.mesasapp.domain.model.LocacaoCompleta
 import br.com.mesasapp.domain.model.LocacaoLinha
 import br.com.mesasapp.domain.model.LocacaoPeca
+import br.com.mesasapp.domain.model.LocacaoResumo
 import br.com.mesasapp.domain.model.StatusLocacao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -70,14 +71,28 @@ class AluguelRepository(
         else { clienteDao.atualizar(cliente.toEntity()); cliente.id }
 
     /** Reaproveita o cliente de mesmo nome em vez de duplicar o cadastro. */
-    suspend fun garantirCliente(nome: String, telefone: String, endereco: String): Long? {
+    suspend fun garantirCliente(
+        nome: String,
+        telefone: String,
+        documento: String,
+        endereco: String
+    ): Long? {
         val limpo = nome.trim()
         if (limpo.isEmpty()) return null
         val existente = clienteDao.buscarPorNome(limpo)
         return if (existente == null) {
-            clienteDao.inserir(Cliente(nome = limpo, telefone = telefone, endereco = endereco).toEntity())
+            clienteDao.inserir(
+                Cliente(
+                    nome = limpo,
+                    telefone = telefone,
+                    documento = documento,
+                    endereco = endereco
+                ).toEntity()
+            )
         } else {
-            clienteDao.atualizar(existente.copy(telefone = telefone, endereco = endereco))
+            clienteDao.atualizar(
+                existente.copy(telefone = telefone, documento = documento, endereco = endereco)
+            )
             existente.id
         }
     }
@@ -85,6 +100,33 @@ class AluguelRepository(
     // --- locacoes ---
 
     fun locacoes(): Flow<List<Locacao>> = locacaoDao.observarTodas().map { lista -> lista.map { it.toModel() } }
+
+    /** Todos os pedidos com os totais ja somados: lista, painel e agenda bebem daqui. */
+    fun resumos(): Flow<List<LocacaoResumo>> = locacaoDao.observarResumos().map { lista ->
+        lista.map { r ->
+            LocacaoResumo(
+                id = r.id,
+                clienteNome = r.clienteNome,
+                telefone = r.telefone,
+                endereco = r.endereco,
+                inicioEpochSeg = r.inicioEpochSeg,
+                fimEpochSeg = r.fimEpochSeg,
+                status = r.status,
+                subtotalCentavos = r.subtotalCentavos,
+                freteCentavos = r.freteCentavos,
+                montagemCentavos = r.montagemCentavos,
+                descontoCentavos = r.descontoCentavos,
+                sinalCentavos = r.sinalCentavos,
+                quebrasCentavos = r.quebrasCentavos,
+                itens = r.itens.orEmpty()
+            )
+        }
+    }
+
+    /** Pecas dadas como quebradas, por item, somando todo o historico. */
+    fun quebrasPorItem(): Flow<Map<Long, Int>> = locacaoDao.observarQuebras().map { lista ->
+        lista.associate { it.itemId to it.quantidade }
+    }
 
     fun agenda(): Flow<List<Locacao>> = locacaoDao.observarAgenda().map { lista -> lista.map { it.toModel() } }
 
