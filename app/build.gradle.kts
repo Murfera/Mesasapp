@@ -14,6 +14,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Room exporta o schema a cada build: versionar isso torna as migracoes auditaveis.
         ksp { arg("room.schemaLocation", "$projectDir/schemas") }
@@ -54,6 +55,14 @@ android {
         disable += "ObsoleteSdkInt"
     }
 
+    // Os testes de interface rodam na JVM com Robolectric: nao dependem de o
+    // celular estar ligado e desbloqueado, e rodam a cada build aqui no PC.
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -88,4 +97,16 @@ dependencies {
     implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+
+    // Testes de interface que rodam no aparelho: tocam nos botoes de verdade.
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }

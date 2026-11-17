@@ -180,7 +180,24 @@ Ideias para depois (não entram na v1):
 **Fora da v1 por decisão do usuário:** calendário / Google Agenda.
 **Depois:** backup (provavelmente igual ao do Finapp — JSON manual + automático).
 
-## 8. Combinados de trabalho
+## 8. Como testar (obrigatório antes de dizer que está pronto)
+
+`gradlew.bat :app:testDebugUnitTest --no-configuration-cache` roda **testes de
+interface de verdade** (Robolectric): abrem o app, tocam nos botões, digitam nos
+campos e conferem o resultado. Não dependem do celular estar ligado e livre.
+
+Dois cuidados que custaram tempo:
+- A tela simulada precisa de tamanho de celular (`@Config(qualifiers =
+  "w411dp-h891dp-xhdpi")`); no tamanho padrão as linhas ficam fora da área
+  visível e **os toques se perdem em silêncio**.
+- Em lista preguiçosa, o que está fora da tela não existe: rolar até o controle
+  antes de tocar (helper `rolarAte`).
+- O dinheiro usa espaço não separável depois do "R$"; comparar por "100,00".
+
+Compilar e o app abrir **não é teste**. Foi assim que a tela de estoque foi
+entregue impossível de preencher.
+
+## 9. Combinados de trabalho
 
 - Testar no **Moto G73 por depuração Wi-Fi**; não criar emulador/máquina virtual agora.
 - **Git a cada etapa salva**, para dar para voltar atrás e comparar (pedido dele em
@@ -188,14 +205,14 @@ Ideias para depois (não entram na v1):
 - Build release só quando ele disser que é a oficial.
 - Apresentar opções e custo antes de implementar caminho com bifurcação.
 
-## 9. Perguntas abertas
+## 10. Perguntas abertas
 
 - Diária adicional: 2 dias custam o dobro ou tem desconto?
 - `applicationId`: `br.com.mesasapp`?
 - O link do Cloud Designer não pôde ser lido (chat renderizado no navegador). Se o
   menu de lá for para ser aproveitado, falta um print ou o código.
 
-## 10. Estado
+## 11. Estado
 
 - 2026-11-17: plano criado.
 - 2026-11-17: **esqueleto do app pronto e compilando** (`:app:assembleDebug` OK,

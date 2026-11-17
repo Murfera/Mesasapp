@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -93,47 +94,11 @@ fun NovoPedidoScreen(
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).testTag("lista_novo"),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item { Text("Novo pedido", style = MaterialTheme.typography.headlineMedium) }
-
-                item {
-                    Bloco("Cliente") {
-                        OutlinedTextField(
-                            estado.clienteNome, viewModel::definirCliente,
-                            label = { Text("Nome") }, singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            estado.telefone, viewModel::definirTelefone,
-                            label = { Text("Telefone / WhatsApp") }, singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            estado.documento, viewModel::definirDocumento,
-                            label = { Text("CPF ou CNPJ (opcional)") }, singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                item {
-                    Bloco("Local da entrega") {
-                        OutlinedTextField(
-                            estado.endereco, viewModel::definirEndereco,
-                            label = { Text("Endereco") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            estado.pontoReferencia, viewModel::definirPontoReferencia,
-                            label = { Text("Ponto de referencia / observacoes") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
 
                 item {
                     Bloco("Datas e horarios") {
@@ -204,6 +169,42 @@ fun NovoPedidoScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                }
+
+                item {
+                    Bloco("Cliente") {
+                        OutlinedTextField(
+                            estado.clienteNome, viewModel::definirCliente,
+                            label = { Text("Nome") }, singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            estado.telefone, viewModel::definirTelefone,
+                            label = { Text("Telefone / WhatsApp") }, singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            estado.documento, viewModel::definirDocumento,
+                            label = { Text("CPF ou CNPJ (opcional)") }, singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                item {
+                    Bloco("Local da entrega") {
+                        OutlinedTextField(
+                            estado.endereco, viewModel::definirEndereco,
+                            label = { Text("Endereco") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            estado.pontoReferencia, viewModel::definirPontoReferencia,
+                            label = { Text("Ponto de referencia / observacoes") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
 
@@ -317,7 +318,7 @@ private fun LinhaItem(opcao: Opcao, aoSomar: () -> Unit, aoSubtrair: () -> Unit)
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge
             )
-            FilledTonalIconButton(onClick = aoSomar) {
+            FilledTonalIconButton(onClick = aoSomar, modifier = Modifier.testTag("mais_${opcao.nome}")) {
                 Icon(Icons.Default.Add, contentDescription = "Mais um")
             }
         }
@@ -404,7 +405,8 @@ private fun ResumoFixo(
                 Text(
                     estado.totalCentavos.formatAsBrl(),
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.testTag("total_pedido")
                 )
             }
             if (estado.sinalCentavos > 0) {
@@ -422,15 +424,18 @@ private fun ResumoFixo(
                 Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Os dois botoes ficam sempre clicaveis: quem nao pode salvar
+                // precisa ouvir o motivo, e nao encontrar um botao morto. A
+                // recusa vem do ViewModel, com a mensagem do que falta.
                 OutlinedButton(
                     onClick = aoSalvarOrcamento,
-                    enabled = estado.temItens && !estado.salvando,
-                    modifier = Modifier.weight(1f)
+                    enabled = !estado.salvando,
+                    modifier = Modifier.weight(1f).testTag("botao_orcamento")
                 ) { Text("Salvar orcamento") }
                 Button(
                     onClick = aoConfirmar,
-                    enabled = estado.temItens && estado.disponivel && !estado.salvando,
-                    modifier = Modifier.weight(1f)
+                    enabled = !estado.salvando,
+                    modifier = Modifier.weight(1f).testTag("botao_confirmar")
                 ) { Text("Confirmar pedido") }
             }
         }
