@@ -52,6 +52,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.mesasapp.domain.Catalogo
+import br.com.mesasapp.domain.FiltroMaterial
+import br.com.mesasapp.domain.Precos
+import br.com.mesasapp.domain.Peca
+import br.com.mesasapp.domain.Material
+import br.com.mesasapp.domain.Cor
 import br.com.mesasapp.domain.FORMAS_PAGAMENTO
 import br.com.mesasapp.domain.MULTIPLICAR_POR_DIAS
 import br.com.mesasapp.domain.Modelo
@@ -149,26 +154,7 @@ fun NovoTela(vm: MesasViewModel) {
                         Chip(nome, item.tipo == tipo, { vm.itemForm = item.copy(tipo = tipo) }, Modifier.testTag("tipo_${tipo.name}"))
                     }
                 }
-                if (item.tipo != TipoLinha.CADEIRA) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Rotulo("Modelo da mesa")
-                        visiveis.filter { it.ehMesa }.forEach { m ->
-                            OpcaoModelo(m, item.mesaId == m.id, precos.peca(m.id).diariaCentavos, livre(m.id) - (c.uso[m.id] ?: 0)) {
-                                vm.itemForm = item.copy(mesaId = m.id)
-                            }
-                        }
-                    }
-                }
-                if (item.tipo != TipoLinha.MESA) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Rotulo(if (item.tipo == TipoLinha.JOGO) "Modelo das cadeiras ($cpm por mesa)" else "Modelo da cadeira")
-                        visiveis.filter { !it.ehMesa }.forEach { m ->
-                            OpcaoModelo(m, item.cadId == m.id, precos.peca(m.id).diariaCentavos, livre(m.id) - (c.uso[m.id] ?: 0)) {
-                                vm.itemForm = item.copy(cadId = m.id)
-                            }
-                        }
-                    }
-                }
+                SeletorModelo(vm, filtro, precos) { id -> livre(id) - (c.uso[id] ?: 0) }
 
                 val unit = when (item.tipo) {
                     TipoLinha.JOGO -> precos.precoJogo(item.mesaId, item.cadId)
@@ -288,25 +274,83 @@ fun NovoTela(vm: MesasViewModel) {
 /** So digitos, virgula e ponto: o resto nao vira dinheiro. */
 private fun dinheiro(s: String) = s.filter { it.isDigit() || it == ',' || it == '.' }
 
+/**
+ * Escolha do modelo em poucos toques: material (aba), braco (so plastico, so
+ * cadeira) e um cartao por cor com quanto tem livre nas datas do pedido. A cor
+ * vale para a mesa e as cadeiras do jogo.
+ */
 @Composable
-private fun OpcaoModelo(m: Modelo, selecionado: Boolean, diaria: Long, livres: Int, aoTocar: () -> Unit) {
-    val forma = RoundedCornerShape(10.dp)
-    Row(
-        Modifier.fillMaxWidth().clip(forma)
-            .background(if (selecionado) Cores.VerdeClaro else Cores.Superficie)
-            .border(1.dp, if (selecionado) Cores.Destaque else Cores.Borda, forma)
-            .clickable(role = Role.Button, onClick = aoTocar)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .testTag("modelo_${m.id}"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Bolinha(Color(m.cor.argb), 18.dp)
-        Column(Modifier.weight(1f)) {
-            T(m.nome, 14.sp, 600, if (selecionado) Cores.VerdeEscuro else Cores.Texto)
-            T(diaria.formatAsBrl() + "/dia", 12.sp, 400, Cores.Suave)
+private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Precos, livres: (String) -> Int) {
+    val item = vm.itemForm
+    val atual = Catalogo.modelo(if (item.tipo == TipoLinha.CADEIRA) item.cadId else item.mesaId) ?: return
+    val mat = filtro.material ?: atual.material
+    val braco = Catalogo.modelo(item.cadId)?.peca?.braco == true && mat == Material.PLASTICO
+
+    fun escolher(m: Material, cor: Cor, comBraco: Boolean) {
+        val cadeira = if (comBraco && m == Material.PLASTICO) Peca.CADEIRA_BRACO else Peca.CADEIRA
+        vm.itemForm = item.copy(mesaId = Modelo(m, Peca.MESA, cor).id, cadId = Modelo(m, cadeira, cor).id)
+    }
+
+    if (filtro == FiltroMaterial.TODOS) {
+        Segmentos(Material.entries.map { it.rotulo }, Material.entries.indexOf(mat), "material") { i ->
+            escolher(Material.entries[i], atual.cor, braco)
         }
-        T("${maxOf(0, livres)} livres", 12.sp, 600, if (livres > 0) Cores.VerdeEscuro else Cores.Laranja)
+    }
+    if (item.tipo != TipoLinha.MESA && mat == Material.PLASTICO) {
+        Segmentos(listOf("Cadeira sem braço", "Com braço"), if (braco) 1 else 0, "braco") { i ->
+            escolher(mat, atual.cor, i == 1)
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Cor.entries.forEach { cor ->
+            val mesa = Modelo(mat, Peca.MESA, cor).id
+            val cad = Modelo(mat, if (braco) Peca.CADEIRA_BRACO else Peca.CADEIRA, cor).id
+            val n = when (item.tipo) {
+                TipoLinha.JOGO -> minOf(livres(mesa), livres(cad) / precos.cadeirasPorMesa(mat, cor))
+                TipoLinha.MESA -> livres(mesa)
+                TipoLinha.CADEIRA -> livres(cad)
+            }.coerceAtLeast(0)
+            val sel = cor == atual.cor && mat == atual.material
+            val forma = RoundedCornerShape(14.dp)
+            Column(
+                Modifier.weight(1f).clip(forma)
+                    .background(if (sel) Cores.VerdeClaro else Cores.Superficie)
+                    .border(if (sel) 2.dp else 1.dp, if (sel) Cores.Destaque else Cores.Borda, forma)
+                    .clickable(role = Role.Button) { escolher(mat, cor, braco) }
+                    .padding(horizontal = 10.dp, vertical = 12.dp)
+                    .testTag("cor_${cor.name}"),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Bolinha(Color(cor.argb))
+                    T(cor.rotulo, 13.sp, 600, umaLinha = true)
+                }
+                Numero(n.toString(), 26.sp, if (n > 0) Cores.Texto else Cores.Laranja)
+                T(if (item.tipo == TipoLinha.JOGO) "jogos livres" else "livres", 11.sp, 400, Cores.Suave, umaLinha = true)
+            }
+        }
+    }
+}
+
+/** Escolha de duas opcoes lado a lado, no mesmo estilo das abas do Estoque. */
+@Composable
+private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, aoEscolher: (Int) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Cores.Abas).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        opcoes.forEachIndexed { i, nome ->
+            val sel = i == selecionada
+            Box(
+                Modifier.weight(1f).height(40.dp)
+                    .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (sel) Cores.Superficie else Color.Transparent)
+                    .clickable(role = Role.Tab) { aoEscolher(i) }
+                    .testTag("${tag}_$i"),
+                contentAlignment = Alignment.Center
+            ) { T(nome, 13.sp, if (sel) 600 else 500, if (sel) Cores.Texto else Cores.Suave, umaLinha = true) }
+        }
     }
 }
 
