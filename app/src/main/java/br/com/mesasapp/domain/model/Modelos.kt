@@ -3,7 +3,7 @@ package br.com.mesasapp.domain.model
 /** Mesa ou cadeira. O que existe fisicamente no estoque. */
 enum class Categoria { MESA, CADEIRA }
 
-enum class Material { PLASTICO, METAL, MADEIRA, OUTRO }
+enum class Material { PLASTICO, METAL, OUTRO }
 
 /**
  * Estagios de uma locacao.

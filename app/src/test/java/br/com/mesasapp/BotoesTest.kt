@@ -112,12 +112,12 @@ class BotoesTest {
 
     @Test
     fun somar_item_no_pedido_muda_o_total() {
-        cadastrarModelo("Cadeira", "Madeira", "Preta", quantidade = "9", diaria = "50")
+        cadastrarModelo("Cadeira", "Metal", "Preta", quantidade = "9", diaria = "50")
 
 
         irPara("Novo")
 
-        val nome = "Cadeira de madeira sem braco preta"
+        val nome = "Cadeira de metal sem braco preta"
         rolarAte("lista_novo", "mais_$nome")
 
         regra.onNodeWithTag("mais_$nome").performClick()
