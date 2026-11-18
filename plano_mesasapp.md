@@ -196,12 +196,13 @@ impossível de preencher, e o usuário teve razão em reclamar.
 
 ```powershell
 $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-& $adb pair 192.168.15.9:<porta de pareamento> <codigo>   # janela de pareamento aberta
+& $adb pair 192.168.15.4:<porta de pareamento> <codigo>   # janela de pareamento aberta
 & $adb mdns services                                      # revela a porta de conexao
-& $adb connect 192.168.15.9:<porta de conexao>
+& $adb connect 192.168.15.4:<porta de conexao>
 & $adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
+O IP do celular muda (já foi .9, em 2026-11-18 era .4): usar o que aparece na janela.
 A porta e o código de pareamento **só valem enquanto a janela está aberta** no
 celular. Depois de parear, `adb mdns services` revela a porta de conexão sozinho —
 não precisa pedir o segundo número.
@@ -230,3 +231,6 @@ mão do usuário e os toques caem no que ele estiver usando.
   (`30e8d68`).
 - **2026-11-17** — detalhe do pedido, devolução com quebra, Pix e Configurações;
   achado e corrigido o laço infinito do diálogo com lista (`7fde186`).
+- **2026-11-17** — material do modelo reduzido a Plástico e Metal (`435ea7a`).
+- **2026-11-18** — 18 testes passando; versão atual instalada no G73 para o usuário
+  cadastrar o estoque real e conferir o cálculo.
