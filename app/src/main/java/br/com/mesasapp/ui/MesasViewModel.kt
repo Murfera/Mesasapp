@@ -142,6 +142,8 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     var form by mutableStateOf(FormPedido(frete = centavosParaCampo(precos.value.fretePadraoCentavos)))
     var itemForm by mutableStateOf(ItemForm(TipoLinha.JOGO, "p-mesa-br", "p-cadeira-br"))
     var qtdItem by mutableStateOf("1")
+    /** Dialogo com WhatsApp, CPF/CNPJ, endereco e referencia do Novo pedido. */
+    var dadosClienteAbertos by mutableStateOf(false)
 
     private var freteAjustado = false
 
@@ -198,8 +200,8 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         fun erro(t: String) { msg = Mensagem(false, t) }
         when {
             f.cliente.isBlank() -> return erro("Informe o nome do cliente.")
-            f.telefone.isBlank() -> return erro("Informe um telefone para contato.")
-            f.endereco.isBlank() -> return erro("Informe o endereço de entrega.")
+            f.telefone.isBlank() -> { dadosClienteAbertos = true; return erro("Informe um telefone para contato.") }
+            f.endereco.isBlank() -> { dadosClienteAbertos = true; return erro("Informe o endereço de entrega.") }
             !f.datasOk -> return erro("A retirada precisa ser no mesmo dia ou depois da entrega.")
             c.mesas + c.cadeiras == 0 -> return erro("Adicione pelo menos um item ao pedido.")
         }

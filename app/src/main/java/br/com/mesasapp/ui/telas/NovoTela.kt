@@ -20,6 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
+import br.com.mesasapp.ui.comum.Voltar
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.outlined.ContactPage
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -102,6 +108,8 @@ fun NovoTela(vm: MesasViewModel) {
     val cpm = precos.cadeirasPorMesa(item.mesaId)
     val qtd = vm.qtdItem.toIntOrNull()?.coerceAtLeast(1) ?: 1
 
+    if (vm.dadosClienteAbertos) DadosClienteDialogo(vm)
+
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("lista_novo")
@@ -111,16 +119,11 @@ fun NovoTela(vm: MesasViewModel) {
             Titulo("Novo pedido")
 
             Cartao {
-                T("Cliente", 15.sp, 600)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    T("Cliente", 15.sp, 600, modifier = Modifier.weight(1f))
+                    BotaoDadosCliente(f) { vm.dadosClienteAbertos = true }
+                }
                 Campo("Nome", f.cliente, { vm.mudarForm(f.copy(cliente = it)) }, placeholder = "Nome completo", tag = "campo_cliente")
-                Campo("Telefone / WhatsApp", f.telefone, { vm.mudarForm(f.copy(telefone = it)) }, placeholder = "(00) 00000-0000", teclado = KeyboardType.Phone, tag = "campo_telefone")
-                Campo("CPF ou CNPJ (para o contrato)", f.documento, { vm.mudarForm(f.copy(documento = it)) }, placeholder = "Opcional")
-            }
-
-            Cartao {
-                T("Local da entrega", 15.sp, 600)
-                Campo("Endereço", f.endereco, { vm.mudarForm(f.copy(endereco = it)) }, placeholder = "Rua, número, bairro", tag = "campo_endereco")
-                Campo("Ponto de referência / observações", f.referencia, { vm.mudarForm(f.copy(referencia = it)) }, placeholder = "Ex.: portão lateral, 2º andar sem elevador")
             }
 
             Cartao {
@@ -333,5 +336,69 @@ private fun CampoData(rotulo: String, data: LocalDate, aoEscolher: (LocalDate) -
             },
             dismissButton = { TextButton(onClick = { aberto = false }) { T("Cancelar", 14.sp, 600, Cores.Destaque) } }
         ) { DatePicker(state = state) }
+    }
+}
+
+/**
+ * Botaozinho do cartao Cliente: abre WhatsApp, CPF/CNPJ, endereco e referencia.
+ * Mostra quantos dos obrigatorios (WhatsApp e endereco) faltam, para nao esconder
+ * o que o "Salvar" vai cobrar.
+ */
+@Composable
+private fun BotaoDadosCliente(f: br.com.mesasapp.ui.FormPedido, aoTocar: () -> Unit) {
+    val faltam = listOf(f.telefone, f.endereco).count { it.isBlank() }
+    val forma = RoundedCornerShape(18.dp)
+    Row(
+        Modifier.height(36.dp).clip(forma)
+            .background(if (faltam == 0) Cores.VerdeClaro else Cores.Superficie)
+            .border(1.dp, if (faltam == 0) Cores.Destaque else Cores.BordaCampo, forma)
+            .clickable(role = Role.Button, onClick = aoTocar)
+            .padding(horizontal = 12.dp)
+            .testTag("botao_dados_cliente"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            if (faltam == 0) Icons.Outlined.CheckCircle else Icons.Outlined.ContactPage, null,
+            tint = if (faltam == 0) Cores.VerdeEscuro else Cores.Texto, modifier = Modifier.size(16.dp)
+        )
+        T(
+            when (faltam) { 0 -> "Dados ok"; else -> "Contato e endereço" },
+            13.sp, 600, if (faltam == 0) Cores.VerdeEscuro else Cores.Texto, umaLinha = true
+        )
+    }
+}
+
+/** Tela cheia por cima do Novo pedido (Dialog, nao AlertDialog: AlertDialog com rolagem trava). */
+@Composable
+private fun DadosClienteDialogo(vm: MesasViewModel) {
+    val f = vm.form
+    Dialog(
+        onDismissRequest = { vm.dadosClienteAbertos = false },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(Modifier.fillMaxSize().background(Cores.Fundo).imePadding()) {
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Voltar("Novo pedido") { vm.dadosClienteAbertos = false }
+                Titulo("Dados do cliente")
+                if (f.cliente.isNotBlank()) T(f.cliente, 14.sp, 400, Cores.Suave)
+                vm.msg?.takeIf { !it.ok }?.let { Aviso(it.texto, false) }
+                Cartao {
+                    Campo("Telefone / WhatsApp", f.telefone, { vm.mudarForm(f.copy(telefone = it)) }, placeholder = "(00) 00000-0000", teclado = KeyboardType.Phone, tag = "campo_telefone")
+                    Campo("CPF ou CNPJ (para o contrato)", f.documento, { vm.mudarForm(f.copy(documento = it)) }, placeholder = "Opcional")
+                }
+                Cartao {
+                    T("Local da entrega", 15.sp, 600)
+                    Campo("Endereço", f.endereco, { vm.mudarForm(f.copy(endereco = it)) }, placeholder = "Rua, número, bairro", tag = "campo_endereco")
+                    Campo("Ponto de referência / observações", f.referencia, { vm.mudarForm(f.copy(referencia = it)) }, placeholder = "Ex.: portão lateral, 2º andar sem elevador")
+                }
+            }
+            Column(Modifier.fillMaxWidth().background(Cores.Superficie).padding(horizontal = 20.dp, vertical = 14.dp)) {
+                Botao("Pronto", { vm.dadosClienteAbertos = false }, Modifier.fillMaxWidth().testTag("botao_dados_pronto"))
+            }
+        }
     }
 }
