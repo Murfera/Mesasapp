@@ -30,9 +30,12 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -104,6 +107,7 @@ fun NovoTela(vm: MesasViewModel) {
     val estoque by vm.estoque.collectAsState()
     val pedidos by vm.pedidos.collectAsState()
     val filtro by vm.filtro.collectAsState()
+    val pagamento by vm.pagamento.collectAsState()
     val f = vm.form
     val item = vm.itemForm
     val c = f.conta(precos)
@@ -118,8 +122,8 @@ fun NovoTela(vm: MesasViewModel) {
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("lista_novo")
-                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Titulo("Novo pedido")
 
@@ -148,12 +152,7 @@ fun NovoTela(vm: MesasViewModel) {
 
             Cartao {
                 T("Itens", 15.sp, 600)
-                // O que vai no jogo (1 mesa + N cadeiras) aparece na linha da quantidade.
-                val tipos = listOf(TipoLinha.JOGO, TipoLinha.MESA, TipoLinha.CADEIRA)
-                Segmentos(listOf("Jogo", "Mesa", "Cadeira"), tipos.indexOf(item.tipo), "tipo", destaque = true) { i ->
-                    vm.itemForm = item.copy(tipo = tipos[i])
-                }
-                SeletorModelo(vm, filtro, precos) { id -> livre(id) - (c.uso[id] ?: 0) }
+                SeletorModelo(vm, filtro, precos, estoque) { id -> livre(id) - (c.uso[id] ?: 0) }
 
                 val unit = when (item.tipo) {
                     TipoLinha.JOGO -> precos.precoJogo(item.mesaId, item.cadId)
@@ -231,9 +230,13 @@ fun NovoTela(vm: MesasViewModel) {
                         Campo("Frete (R$)", f.frete, { vm.mudarForm(f.copy(frete = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
                         Campo("Desconto (R$)", f.desconto, { vm.mudarForm(f.copy(desconto = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Campo("Sinal pago (R$)", f.sinal, { vm.mudarForm(f.copy(sinal = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
-                        Campo("Caução (R$)", f.caucao, { vm.mudarForm(f.copy(caucao = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
+                    // Sinal e caucao so aparecem se ligados em menu > Exibir.
+                    if (pagamento.mostrarSinal || pagamento.mostrarCaucao) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (pagamento.mostrarSinal) Campo("Sinal pago (R$)", f.sinal, { vm.mudarForm(f.copy(sinal = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
+                            if (pagamento.mostrarCaucao) Campo("Caução (R$)", f.caucao, { vm.mudarForm(f.copy(caucao = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
+                            if (!(pagamento.mostrarSinal && pagamento.mostrarCaucao)) Box(Modifier.weight(1f))
+                        }
                     }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -243,13 +246,33 @@ fun NovoTela(vm: MesasViewModel) {
                     }
                 }
             }
-        }
 
-        // Resumo do dinheiro, sempre visivel no rodape.
+            // Sem rodape fixo: o botao fica no fim do formulario e abre o resumo.
+            Botao(
+                "Confirmar pedido · " + c.totalCentavos.formatAsBrl(),
+                { vm.msg = null; vm.resumoAberto = true },
+                Modifier.fillMaxWidth().testTag("botao_resumo"), altura = 52.dp, tamanho = 15.sp
+            )
+        }
+    }
+
+    if (vm.resumoAberto) ResumoPedido(vm, c, f)
+}
+
+/** Painel que sobe de baixo: valores do pedido e as duas formas de salvar. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ResumoPedido(vm: MesasViewModel, c: br.com.mesasapp.domain.Conta, f: br.com.mesasapp.ui.FormPedido) {
+    ModalBottomSheet(
+        onDismissRequest = { vm.resumoAberto = false },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Cores.Superficie
+    ) {
         Column(
-            Modifier.fillMaxWidth().shadow(8.dp).background(Cores.Superficie).padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp),
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            T("Resumo do pedido", 17.sp, 600, modifier = Modifier.padding(bottom = 4.dp))
             LinhaValor(rotuloAluguel(c.dias, c.diariaCentavos), c.aluguelCentavos.formatAsBrl())
             LinhaValor("Frete", centavos(f.frete).formatAsBrl())
             LinhaValor("Desconto", "− " + centavos(f.desconto).formatAsBrl())
@@ -260,11 +283,14 @@ fun NovoTela(vm: MesasViewModel) {
                     Numero(c.totalCentavos.formatAsBrl(), 24.sp, modifier = Modifier.testTag("total_novo"))
                 }
             }
-            LinhaValor("Saldo a cobrar na entrega (total − sinal)", c.saldoCentavos.formatAsBrl(), pesoValor = 600)
+            // Sem o campo de sinal, o saldo e igual ao total: a linha so repetiria o numero.
+            if (vm.pagamento.collectAsState().value.mostrarSinal) {
+                LinhaValor("Saldo a cobrar na entrega (total − sinal)", c.saldoCentavos.formatAsBrl(), pesoValor = 600)
+            }
             vm.msg?.takeIf { !it.ok }?.let { Aviso(it.texto, false, vertical = 8.dp) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Botao("Salvar orçamento", { vm.salvar(StatusPedido.ORCAMENTO) }, Modifier.weight(1f).testTag("botao_orcamento"), estilo = EstiloBotao.CONTORNO)
-                Botao("Confirmar pedido", { vm.salvar(StatusPedido.CONFIRMADO) }, Modifier.weight(1.3f).testTag("botao_confirmar"))
+                Botao("Emitir pedido", { vm.salvar(StatusPedido.CONFIRMADO) }, Modifier.weight(1.3f).testTag("botao_confirmar"))
             }
         }
     }
@@ -279,7 +305,7 @@ private fun dinheiro(s: String) = s.filter { it.isDigit() || it == ',' || it == 
  * vale para a mesa e as cadeiras do jogo.
  */
 @Composable
-private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Precos, livres: (String) -> Int) {
+private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Precos, estoque: Map<String, Int>, livres: (String) -> Int) {
     val item = vm.itemForm
     val atual = Catalogo.modelo(if (item.tipo == TipoLinha.CADEIRA) item.cadId else item.mesaId) ?: return
     val mat = filtro.material ?: atual.material
@@ -290,20 +316,65 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
         vm.itemForm = item.copy(mesaId = Modelo(m, Peca.MESA, cor).id, cadId = Modelo(m, cadeira, cor).id)
     }
 
-    if (filtro == FiltroMaterial.TODOS) {
-        Segmentos(Material.entries.map { it.rotulo }, Material.entries.indexOf(mat), "material") { i ->
-            escolher(Material.entries[i], atual.cor, braco)
+    // So aparece o que existe no estoque: cores, materiais e cadeira com/sem braco.
+    // Cor com estoque mas sem nada livre nas datas continua aparecendo (0 em laranja).
+    fun cadeiraDe(m: Material, comBraco: Boolean, cor: Cor) =
+        Modelo(m, if (comBraco && m == Material.PLASTICO) Peca.CADEIRA_BRACO else Peca.CADEIRA, cor).id
+    fun coresDe(m: Material, comBraco: Boolean): List<Cor> = Cor.entries.filter { cor ->
+        val mesas = estoque[Modelo(m, Peca.MESA, cor).id] ?: 0
+        val cadeiras = estoque[cadeiraDe(m, comBraco, cor)] ?: 0
+        when (item.tipo) {
+            TipoLinha.JOGO -> mesas > 0 && cadeiras >= precos.cadeirasPorMesa(m, cor)
+            TipoLinha.MESA -> mesas > 0
+            TipoLinha.CADEIRA -> cadeiras > 0
         }
     }
-    if (item.tipo != TipoLinha.MESA && mat == Material.PLASTICO) {
+    fun bracosDe(m: Material): List<Boolean> =
+        if (item.tipo == TipoLinha.MESA || m != Material.PLASTICO) listOf(false)
+        else listOf(false, true).filter { coresDe(m, it).isNotEmpty() }
+    val materiais = (filtro.material?.let { listOf(it) } ?: Material.entries).filter { m -> bracosDe(m).any { coresDe(m, it).isNotEmpty() } }
+    val bracos = bracosDe(mat)
+
+    // Se o que esta marcado nao existe no estoque, marca o que existe (material, braco).
+    LaunchedEffect(materiais, bracos, mat, braco) {
+        if (materiais.isNotEmpty() && mat !in materiais) {
+            val m = materiais.first()
+            escolher(m, atual.cor, bracosDe(m).firstOrNull() ?: false)
+        } else if (bracos.isNotEmpty() && braco !in bracos) {
+            escolher(mat, atual.cor, bracos.first())
+        }
+    }
+
+    if (materiais.size > 1) {
+        Segmentos(materiais.map { it.rotulo }, materiais.indexOf(mat).coerceAtLeast(0), "material") { i ->
+            val m = materiais[i]
+            escolher(m, atual.cor, if (braco && true in bracosDe(m)) true else bracosDe(m).firstOrNull() ?: false)
+        }
+    }
+    // Ordem pedida pelo usuario: material primeiro, depois Jogo | Mesa | Cadeira.
+    // O que vai no jogo (1 mesa + N cadeiras) aparece na linha da quantidade.
+    val tipos = listOf(TipoLinha.JOGO, TipoLinha.MESA, TipoLinha.CADEIRA)
+    Segmentos(listOf("Jogo", "Mesa", "Cadeira"), tipos.indexOf(item.tipo), "tipo") { i ->
+        vm.itemForm = item.copy(tipo = tipos[i])
+    }
+    if (bracos.size > 1) {
         Segmentos(listOf("Cadeira sem braço", "Com braço"), if (braco) 1 else 0, "braco") { i ->
             escolher(mat, atual.cor, i == 1)
         }
     }
+    val cores = coresDe(mat, braco)
+    // Se a cor marcada sumiu (sem estoque), marca a primeira que aparece.
+    LaunchedEffect(cores, atual.cor) {
+        if (cores.isNotEmpty() && atual.cor !in cores) escolher(mat, cores.first(), braco)
+    }
+    if (cores.isEmpty()) {
+        T("Nenhuma cor com estoque aqui. Cadastre as quantidades na aba Estoque.", 13.sp, 400, Cores.Suave)
+        return
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Cor.entries.forEach { cor ->
+        cores.forEach { cor ->
             val mesa = Modelo(mat, Peca.MESA, cor).id
-            val cad = Modelo(mat, if (braco) Peca.CADEIRA_BRACO else Peca.CADEIRA, cor).id
+            val cad = cadeiraDe(mat, braco, cor)
             val n = when (item.tipo) {
                 TipoLinha.JOGO -> minOf(livres(mesa), livres(cad) / precos.cadeirasPorMesa(mat, cor))
                 TipoLinha.MESA -> livres(mesa)
@@ -328,12 +399,13 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
                 T(if (item.tipo == TipoLinha.JOGO) "jogos livres" else "livres", 11.sp, 400, Cores.Suave, umaLinha = true)
             }
         }
+        repeat(3 - cores.size) { Box(Modifier.weight(1f)) }
     }
 }
 
 /** Escolha de duas opcoes lado a lado, no mesmo estilo das abas do Estoque. */
 @Composable
-private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, destaque: Boolean = false, aoEscolher: (Int) -> Unit) {
+private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, aoEscolher: (Int) -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Cores.Abas).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -344,12 +416,12 @@ private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, desta
                 Modifier.weight(1f).height(40.dp)
                     .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (sel) (if (destaque) Cores.Verde else Cores.Superficie) else Color.Transparent)
+                    .then(if (sel) Modifier.background(Cores.GradienteVerde) else Modifier)
                     .clickable(role = Role.Tab) { aoEscolher(i) }
                     .testTag("${tag}_$i"),
                 contentAlignment = Alignment.Center
             ) {
-                val cor = when { sel && destaque -> Cores.SobreVerde; sel -> Cores.Texto; else -> Cores.Suave }
+                val cor = if (sel) Cores.SobreVerde else Cores.Suave
                 T(nome, 13.sp, if (sel) 600 else 500, cor, umaLinha = true)
             }
         }
@@ -387,12 +459,12 @@ private fun CampoData(rotulo: String, data: LocalDate, aoEscolher: (LocalDate) -
 
 /**
  * Botaozinho do cartao Cliente: abre WhatsApp, CPF/CNPJ, endereco e referencia.
- * Mostra quantos dos obrigatorios (WhatsApp e endereco) faltam, para nao esconder
- * o que o "Salvar" vai cobrar.
+ * Fica verde, com um visto, quando ha algum dado preenchido (todos sao opcionais).
  */
 @Composable
 private fun BotaoDadosCliente(f: br.com.mesasapp.ui.FormPedido, aoTocar: () -> Unit) {
-    val faltam = listOf(f.telefone, f.endereco).count { it.isBlank() }
+    // Tudo aqui e opcional: fica verde quando ha algum dado preenchido.
+    val faltam = if (listOf(f.telefone, f.documento, f.endereco, f.referencia).any { it.isNotBlank() }) 0 else 1
     val forma = RoundedCornerShape(18.dp)
     Row(
         Modifier.height(36.dp).clip(forma)
@@ -409,7 +481,7 @@ private fun BotaoDadosCliente(f: br.com.mesasapp.ui.FormPedido, aoTocar: () -> U
             tint = if (faltam == 0) Cores.VerdeEscuro else Cores.Texto, modifier = Modifier.size(16.dp)
         )
         T(
-            when (faltam) { 0 -> "Dados ok"; else -> "Contato e endereço" },
+            "Contato e endereço",
             13.sp, 600, if (faltam == 0) Cores.VerdeEscuro else Cores.Texto, umaLinha = true
         )
     }

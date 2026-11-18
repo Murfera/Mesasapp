@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import br.com.mesasapp.domain.FiltroMaterial
 import br.com.mesasapp.ui.comum.Divisor
 import br.com.mesasapp.ui.comum.T
 import br.com.mesasapp.ui.telas.AgendaTela
+import br.com.mesasapp.ui.telas.ConfigPagamentoTela
 import br.com.mesasapp.ui.telas.ConfigPixTela
 import br.com.mesasapp.ui.telas.DetalheTela
 import br.com.mesasapp.ui.telas.EstoqueTela
@@ -82,7 +84,7 @@ private val ABAS = listOf(
 fun MesasappApp(container: AppContainer) {
     val vm: MesasViewModel = viewModel(factory = MesasViewModel.Fabrica(container))
 
-    BackHandler(enabled = vm.tela == Tela.DETALHE || vm.tela == Tela.PRECOS || vm.tela == Tela.PIX) { vm.voltar() }
+    BackHandler(enabled = vm.tela == Tela.DETALHE || vm.tela == Tela.PRECOS || vm.tela == Tela.PIX || vm.tela == Tela.PAGAMENTO) { vm.voltar() }
 
     Column(
         Modifier
@@ -102,6 +104,7 @@ fun MesasappApp(container: AppContainer) {
                 Tela.DETALHE -> DetalheTela(vm)
                 Tela.PRECOS -> PrecosTela(vm)
                 Tela.PIX -> ConfigPixTela(vm)
+                Tela.PAGAMENTO -> ConfigPagamentoTela(vm)
             }
         }
         BarraDeAbas(vm)
@@ -160,6 +163,7 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
         Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
         ItemMenu(Icons.Outlined.LocalOffer, "Preços", null, Modifier.testTag("menu_precos")) { vm.abrirDoMenu(Tela.PRECOS) }
         ItemMenu(Icons.Outlined.QrCode2, "Config. Pix", null, Modifier.testTag("menu_pix")) { vm.abrirDoMenu(Tela.PIX) }
+        ItemMenu(Icons.Outlined.Payments, "Exibir", null, Modifier.testTag("menu_pagamento")) { vm.abrirDoMenu(Tela.PAGAMENTO) }
         Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
         ItemMenu(Icons.Outlined.DarkMode, "Tema", tema.rotulo, Modifier.testTag("menu_tema"), vm.menuTemaAberto) {
             vm.menuTemaAberto = !vm.menuTemaAberto

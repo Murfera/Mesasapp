@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import br.com.mesasapp.data.preferences.OpcoesPagamento
 import br.com.mesasapp.data.preferences.PixConfig
 import br.com.mesasapp.data.preferences.TemaApp
 import br.com.mesasapp.di.AppContainer
@@ -32,7 +33,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class Tela { INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX }
+enum class Tela { INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX, PAGAMENTO }
 
 data class Mensagem(val ok: Boolean, val texto: String)
 
@@ -85,6 +86,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     val estoque: StateFlow<Map<String, Int>> = repo.estoque().stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
     val precos: StateFlow<Precos> = config.precos.stateIn(viewModelScope, SharingStarted.Eagerly, Precos())
     val pix: StateFlow<PixConfig> = config.pix.stateIn(viewModelScope, SharingStarted.Eagerly, PixConfig())
+    val pagamento: StateFlow<OpcoesPagamento> = config.pagamento.stateIn(viewModelScope, SharingStarted.Eagerly, OpcoesPagamento())
     val tema: StateFlow<TemaApp> = config.tema.stateIn(viewModelScope, SharingStarted.Eagerly, TemaApp.SISTEMA)
     val filtro: StateFlow<FiltroMaterial> = config.filtro.stateIn(viewModelScope, SharingStarted.Eagerly, FiltroMaterial.TODOS)
     val pedidos: StateFlow<List<Pedido>> = repo.pedidos().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -111,7 +113,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun abrirDoMenu(t: Tela) {
-        if (tela != Tela.PRECOS && tela != Tela.PIX) telaAntesDoMenu = tela
+        if (tela != Tela.PRECOS && tela != Tela.PIX && tela != Tela.PAGAMENTO) telaAntesDoMenu = tela
         irPara(t)
     }
 
@@ -120,7 +122,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     /** Botao voltar do Android: so as telas que abrem por cima voltam. */
     fun voltar(): Boolean = when (tela) {
         Tela.DETALHE -> { irPara(Tela.PEDIDOS); true }
-        Tela.PRECOS, Tela.PIX -> { voltarDoMenu(); true }
+        Tela.PRECOS, Tela.PIX, Tela.PAGAMENTO -> { voltarDoMenu(); true }
         else -> false
     }
 
@@ -144,6 +146,8 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     var qtdItem by mutableStateOf("1")
     /** Dialogo com WhatsApp, CPF/CNPJ, endereco e referencia do Novo pedido. */
     var dadosClienteAbertos by mutableStateOf(false)
+    /** Painel de resumo do Novo pedido (abre pelo botao do fim do formulario). */
+    var resumoAberto by mutableStateOf(false)
 
     private var freteAjustado = false
 
@@ -200,8 +204,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         fun erro(t: String) { msg = Mensagem(false, t) }
         when {
             f.cliente.isBlank() -> return erro("Informe o nome do cliente.")
-            f.telefone.isBlank() -> { dadosClienteAbertos = true; return erro("Informe um telefone para contato.") }
-            f.endereco.isBlank() -> { dadosClienteAbertos = true; return erro("Informe o endereço de entrega.") }
+            // WhatsApp, CPF e endereco sao opcionais (pedido do usuario); so o nome e obrigatorio.
             !f.datasOk -> return erro("A retirada precisa ser no mesmo dia ou depois da entrega.")
             c.mesas + c.cadeiras == 0 -> return erro("Adicione pelo menos um item ao pedido.")
         }
@@ -218,6 +221,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
             pagamento = f.pagamento, status = status, linhas = linhas,
             pecas = c.uso.map { (id, n) -> PecaPedido(id, n, p.peca(id).reposicaoCentavos) }
         )
+        resumoAberto = false
         viewModelScope.launch {
             val id = repo.salvarPedido(pedido)
             form = FormPedido(frete = centavosParaCampo(precos.value.fretePadraoCentavos))
@@ -294,6 +298,12 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     fun definirReposicao(chave: String, c: Long) = viewModelScope.launch { config.definirReposicao(chave, c) }
     fun definirDescontoJogo(c: Long) = viewModelScope.launch { config.definirDescontoJogo(c) }
     fun definirFrete(c: Long) = viewModelScope.launch { config.definirFrete(c) }
+    /** Desligar o campo tambem zera o que ja foi digitado, para nao entrar escondido na conta. */
+    fun definirPagamento(o: OpcoesPagamento) {
+        viewModelScope.launch { config.definirPagamento(o) }
+        if (!o.mostrarSinal) form = form.copy(sinal = "")
+        if (!o.mostrarCaucao) form = form.copy(caucao = "")
+    }
     fun definirPix(p: PixConfig) = viewModelScope.launch { config.definirPix(p) }
 
     // --- agenda ---

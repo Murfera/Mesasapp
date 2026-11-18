@@ -55,7 +55,7 @@ fun AgendaTela(vm: MesasViewModel) {
     val sel = vm.diaCalendario
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 28.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Titulo("Agenda")
@@ -89,7 +89,7 @@ fun AgendaTela(vm: MesasViewModel) {
                                 if (ret > 0) desc += ", $ret " + if (ret == 1) "retirada" else "retiradas"
                                 Column(
                                     Modifier.fillMaxSize().clip(forma)
-                                        .background(if (selecionado) Cores.Verde else Color.Transparent)
+                                        .then(if (selecionado) Modifier.background(Cores.GradienteVerde) else Modifier)
                                         .border(1.dp, if (selecionado || ehHoje) Cores.Destaque else Color.Transparent, forma)
                                         .clickable(role = Role.Button) { vm.diaCalendario = dia }
                                         .semantics(mergeDescendants = true) { contentDescription = desc },

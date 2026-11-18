@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -56,7 +57,18 @@ data class Paleta(
     val roxoClaro: Color,
     val cinzaStatus: Color,
     val cinzaStatusTexto: Color,
-    val qrFundo: Color
+    val qrFundo: Color,
+    /** Fundo do Estoque conforme a aba: cinza claro no plastico, azul claro no metal (o usuario pediu invertido). */
+    val fundoPlastico: Color,
+    val fundoMetal: Color,
+    /** Tom mais forte do alto da tela (o degrade desce ate fundoPlastico/fundoMetal). */
+    val fundoPlasticoTopo: Color,
+    val fundoMetalTopo: Color,
+    /** Cartoes do Estoque: "gelo", quase branco (acinzentado no plastico, azulado no metal). */
+    val geloPlastico: Color,
+    val geloMetal: Color,
+    /** Ponta clara do degrade verde (a outra ponta e [verde]). */
+    val verdeGradiente: Color
 )
 
 val PaletaClara = Paleta(
@@ -90,7 +102,14 @@ val PaletaClara = Paleta(
     roxoClaro = Color(0xFFF3EEFB),
     cinzaStatus = Color(0xFFEEF0EF),
     cinzaStatusTexto = Color(0xFF47514E),
-    qrFundo = Color(0xFFFBFCFB)
+    qrFundo = Color(0xFFFBFCFB),
+    fundoPlastico = Color(0xFFE6E8EA),
+    fundoMetal = Color(0xFFE3EEFA),
+    fundoPlasticoTopo = Color(0xFFD2D6DA),
+    fundoMetalTopo = Color(0xFFC9DDF5),
+    geloPlastico = Color(0xFFF5F6F7),
+    geloMetal = Color(0xFFF4F8FD),
+    verdeGradiente = Color(0xFF1C8F77)
 )
 
 val PaletaEscura = Paleta(
@@ -125,7 +144,14 @@ val PaletaEscura = Paleta(
     roxoClaro = Color(0xFF2E2540),
     cinzaStatus = Color(0xFF2A302E),
     cinzaStatusTexto = Color(0xFFB9C2BE),
-    qrFundo = Color(0xFF1F2826)
+    qrFundo = Color(0xFF1F2826),
+    fundoPlastico = Color(0xFF1A1D20),
+    fundoMetal = Color(0xFF121D2A),
+    fundoPlasticoTopo = Color(0xFF272B2F),
+    fundoMetalTopo = Color(0xFF1A2D45),
+    geloPlastico = Color(0xFF202427),
+    geloMetal = Color(0xFF1A2430),
+    verdeGradiente = Color(0xFF2EA88F)
 )
 
 private val LocalPaleta = staticCompositionLocalOf { PaletaClara }
@@ -165,6 +191,18 @@ object Cores {
     val CinzaStatus @Composable @ReadOnlyComposable get() = p.cinzaStatus
     val CinzaStatusTexto @Composable @ReadOnlyComposable get() = p.cinzaStatusTexto
     val QrFundo @Composable @ReadOnlyComposable get() = p.qrFundo
+    val FundoPlastico @Composable @ReadOnlyComposable get() = p.fundoPlastico
+    val FundoMetal @Composable @ReadOnlyComposable get() = p.fundoMetal
+    val FundoPlasticoTopo @Composable @ReadOnlyComposable get() = p.fundoPlasticoTopo
+    val FundoMetalTopo @Composable @ReadOnlyComposable get() = p.fundoMetalTopo
+    val GeloPlastico @Composable @ReadOnlyComposable get() = p.geloPlastico
+    val GeloMetal @Composable @ReadOnlyComposable get() = p.geloMetal
+
+    /** Degrade do verde, da esquerda (escuro) para a direita (claro): botoes e opcoes marcadas. */
+    val GradienteVerde: Brush @Composable @ReadOnlyComposable get() = Brush.horizontalGradient(listOf(p.verde, p.verdeGradiente))
+
+    /** Fundo de tela do alto (mais forte) ate embaixo (mais claro), na mesma cor. */
+    fun gradienteFundo(topo: Color, base: Color): Brush = Brush.verticalGradient(listOf(topo, base))
 }
 
 private fun variavel(res: Int, peso: Int) =

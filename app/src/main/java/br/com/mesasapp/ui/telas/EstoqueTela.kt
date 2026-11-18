@@ -50,11 +50,17 @@ fun EstoqueTela(vm: MesasViewModel) {
     val precos by vm.precos.collectAsState()
     val filtro by vm.filtro.collectAsState()
     val mat = filtro.material ?: vm.estoqueMaterial
+    val gelo = if (mat == Material.PLASTICO) Cores.GeloPlastico else Cores.GeloMetal
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("lista_estoque")
-            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        Modifier.fillMaxSize()
+            .background(
+                if (mat == Material.PLASTICO) Cores.gradienteFundo(Cores.FundoPlasticoTopo, Cores.FundoPlastico)
+                else Cores.gradienteFundo(Cores.FundoMetalTopo, Cores.FundoMetal)
+            )
+            .verticalScroll(rememberScrollState()).testTag("lista_estoque")
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Titulo("Estoque")
 
@@ -69,11 +75,11 @@ fun EstoqueTela(vm: MesasViewModel) {
                         Modifier.weight(1f).height(44.dp)
                             .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
                             .clip(RoundedCornerShape(9.dp))
-                            .background(if (sel) Cores.Superficie else Color.Transparent)
+                            .then(if (sel) Modifier.background(Cores.GradienteVerde) else Modifier)
                             .clickable(role = Role.Tab) { vm.estoqueMaterial = m }
                             .testTag("aba_material_${m.name}"),
                         contentAlignment = Alignment.Center
-                    ) { T(m.rotulo, 14.sp, if (sel) 600 else 500, if (sel) Cores.Texto else Cores.CinzaStatusTexto) }
+                    ) { T(m.rotulo, 14.sp, if (sel) 600 else 500, if (sel) Cores.SobreVerde else Cores.CinzaStatusTexto) }
                 }
             }
         }
@@ -82,7 +88,7 @@ fun EstoqueTela(vm: MesasViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Cor.entries.forEach { cor ->
                 key(mat, cor) {
-                    Cartao(Modifier.weight(1f), PaddingValues(horizontal = 8.dp, vertical = 12.dp), espaco = 10.dp) {
+                    Cartao(Modifier.weight(1f), PaddingValues(horizontal = 8.dp, vertical = 12.dp), espaco = 10.dp, fundo = gelo) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Bolinha(Color(cor.argb))
@@ -108,7 +114,8 @@ fun EstoqueTela(vm: MesasViewModel) {
 
         Peca.entries.filter { mat in it.materiais }.forEach { peca ->
             val modelos = Cor.entries.map { Modelo(mat, peca, it) }
-            Cartao(espaco = 12.dp) {
+            // Blocos de quantidade um pouco mais baixos, para o Estoque caber sem rolar.
+            Cartao(padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), espaco = 8.dp, fundo = gelo) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                     T(peca.rotulo, 16.sp, 600)
                     T("${modelos.sumOf { estoque[it.id] ?: 0 }} no total", 13.sp, 400, Cores.Suave, Modifier.testTag("total_${mat.name}_${peca.name}"))
@@ -116,7 +123,7 @@ fun EstoqueTela(vm: MesasViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     modelos.forEach { m ->
                         key(m.id) {
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Bolinha(Color(m.cor.argb))
                                     T(m.cor.rotulo, 13.sp, 600, Cores.Texto2)
@@ -124,7 +131,7 @@ fun EstoqueTela(vm: MesasViewModel) {
                                 CampoNumero(
                                     (estoque[m.id] ?: 0).toLong(),
                                     { vm.definirTotal(m.id, it) },
-                                    Modifier.fillMaxWidth().testTag("qtd_${m.id}")
+                                    Modifier.fillMaxWidth().testTag("qtd_${m.id}"), altura = 44.dp
                                 )
                             }
                         }

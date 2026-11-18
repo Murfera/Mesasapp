@@ -85,13 +85,13 @@ fun InicioTela(vm: MesasViewModel) {
     val aReceber = peds.filter { it.status.ocupaEstoque }.sumOf { it.conta.saldoCentavos }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 28.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f)) {
                 T(Datas.extenso(hoje), 13.sp, 400, Cores.Suave)
-                Titulo(saudacao(), 28.sp, Modifier.padding(top = 4.dp))
+                Titulo(saudacao(), modifier = Modifier.padding(top = 2.dp))
             }
             Botao("Novo pedido", { vm.irPara(Tela.NOVO) }, altura = 44.dp, raio = 22.dp) {
                 Icon(Icons.Filled.Add, null, tint = Cores.SobreVerde, modifier = Modifier.size(18.dp))
@@ -110,7 +110,7 @@ fun InicioTela(vm: MesasViewModel) {
         }
 
         Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Cores.Verde).padding(16.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Cores.GradienteVerde).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {

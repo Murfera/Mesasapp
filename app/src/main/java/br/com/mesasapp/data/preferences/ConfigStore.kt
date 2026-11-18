@@ -3,6 +3,7 @@ package br.com.mesasapp.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -25,6 +26,9 @@ enum class TemaApp(val rotulo: String) {
     ESCURO("Escuro")
 }
 
+/** Menu > Config. pagamento: campos opcionais do Novo pedido. Desligados por padrao. */
+data class OpcoesPagamento(val mostrarSinal: Boolean = false, val mostrarCaucao: Boolean = false)
+
 data class PixConfig(val chave: String = "", val nome: String = "", val cidade: String = "")
 
 /**
@@ -43,6 +47,8 @@ class ConfigStore(private val context: Context) {
     private val PIX_CIDADE = stringPreferencesKey("cidade_recebedor")
     private val FILTRO = stringPreferencesKey("filtro_material")
     private val TEMA = stringPreferencesKey("tema")
+    private val MOSTRAR_SINAL = booleanPreferencesKey("mostrar_sinal")
+    private val MOSTRAR_CAUCAO = booleanPreferencesKey("mostrar_caucao")
 
     val precos: Flow<Precos> = context.dataStore.data.map { p ->
         val padrao = Precos()
@@ -84,6 +90,15 @@ class ConfigStore(private val context: Context) {
     }
 
     suspend fun definirTema(t: TemaApp) = context.dataStore.edit { it[TEMA] = t.name }
+
+    val pagamento: Flow<OpcoesPagamento> = context.dataStore.data.map { p ->
+        OpcoesPagamento(p[MOSTRAR_SINAL] ?: false, p[MOSTRAR_CAUCAO] ?: false)
+    }
+
+    suspend fun definirPagamento(o: OpcoesPagamento) = context.dataStore.edit {
+        it[MOSTRAR_SINAL] = o.mostrarSinal
+        it[MOSTRAR_CAUCAO] = o.mostrarCaucao
+    }
 
     suspend fun definirFiltro(f: FiltroMaterial) = context.dataStore.edit { it[FILTRO] = f.name }
 }

@@ -21,17 +21,33 @@ nenhum custo de operação.
 visual, texto ou fluxo, **o protótipo manda**.
 
 - Barra de cima: "Locação de festas" + etiqueta do material filtrado + menu ⋮
-  (**Material**: Todos/Plástico/Metal, **Preços**, **Config. Pix**).
+  (**Material**: Todos/Plástico/Metal, **Preços**, **Config. Pix**, **Exibir**, **Tema**).
+- **Exibir** (menu ⋮): chaves "Sinal pago" e "Caução", **desligadas por padrão**; só
+  com elas ligadas os campos aparecem no Novo pedido. Desligar zera o valor digitado.
 - Abas: **Início, Pedidos, Novo, Agenda, Estoque**. Detalhe do pedido, Preços e
   Config. Pix abrem por cima (o voltar do Android volta).
-- **Novo**: Cliente → Local → Datas → Itens (Jogo / Mesa avulsa / Cadeira avulsa,
-  modelo com "N livres", quantidade) → Valores e pagamento; resumo fixo no rodapé.
+- **Novo** (refinado pelo usuário em 2026-11-18, mais enxuto que o protótipo):
+  - **Cliente**: só o campo nome (sem rótulo) + botão "Contato e endereço" que abre
+    tela cheia com WhatsApp, CPF/CNPJ, endereço e referência. **Só o nome é
+    obrigatório**; o botão fica verde quando há algum dado.
+  - **Datas**: "N diárias" na linha do título, à direita.
+  - **Itens**: barra Plástico | Metal → barra Jogo | Mesa | Cadeira → barra Sem braço |
+    Com braço → 3 cartões por cor com "livres" nas datas. **Só aparece o que existe no
+    estoque** (material, braço e cor); se o marcado some, marca o que existe. A cor vale
+    para mesa e cadeiras do jogo (não dá mais para misturar cores num jogo).
+  - **Valores**: frete, desconto, forma de pagamento (sinal/caução só se ligados em Exibir).
+  - **Sem rodapé fixo**: botão "Confirmar pedido · R$ X" no fim abre um painel de baixo
+    (resumo + "Salvar orçamento" / "Emitir pedido"; emitir = reserva estoque).
 - **Detalhe**: dados, itens e valores, vistoria (quebradas, faltando, dias de atraso)
   com total refeito, Google Agenda (só link), Pix (Sinal 50% / Saldo / Após vistoria
   / Outro valor, QR, copia e cola, WhatsApp) e o botão da próxima situação.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
   "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
 - Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`).
+  Títulos de página todos com 20 sp. Opção marcada e botões cheios usam **degradê
+  verde** (`Cores.GradienteVerde`). **Estoque**: fundo em degradê conforme a aba —
+  **Plástico cinza, Metal azul** (o usuário pediu invertido) — e cartões em tom "gelo";
+  aba marcada verde; blocos de quantidade mais baixos para caber sem rolar.
   **Tema no menu ⋮ → Tema**: Automático (segue o Android, padrão), Claro ou Escuro —
   o usuário preferiu a escolha dentro do app. Paleta escura derivada em
   `ui/theme/Theme.kt`; as telas usam `Cores.X`, nunca cor fixa. `Cores.Verde` é o
@@ -121,6 +137,10 @@ quando o cliente paga** — baixa manual.
 
 ## 7. Falta / decisões em aberto
 
+0. **Os testes de interface estão desatualizados** desde o refinamento do Novo pedido
+   (campos movidos para a janela de contato, botões no painel de resumo, cartões por cor).
+   Rodar e ajustar **só quando o usuário pedir**.
+
 1. **Multiplicar pelas diárias?** (`MULTIPLICAR_POR_DIAS`) — decisão dele.
 2. **Escolher hora de entrega/retirada** na tela (o banco já guarda a hora).
 3. Bloquear jogo com mesa de um material e cadeira de outro (hoje vale a mesa).
@@ -181,7 +201,7 @@ mão do usuário e os toques caem no que ele estiver usando.
 
 ## 10. Combinados de trabalho
 
-- **Git a cada etapa salva**, para dar para voltar atrás e comparar.
+- **Git e GitHub só quando o usuário pedir** (desde 2026-11-18). Testes também só quando ele pedir.
 - **Emulador liberado** (2026-11-18): AVD `Moto_G73_5G`, testar nele primeiro e
   depois instalar no Moto G73 por Wi-Fi. Script de toques/fotos usado na sessão:
   `adb shell input tap/text`, `uiautomator dump`, `screencap`. Cuidado: com o teclado
@@ -214,3 +234,7 @@ mão do usuário e os toques caem no que ele estiver usando.
 - **2026-11-18** — versão marcada `v0.2-interface-prototipo` antes das mudanças do
   usuário. Tema escolhido no app (Automático/Claro/Escuro). Fluxo completo conferido
   no emulador (estoque → pedido → entregue → devolução com quebra). 27 testes.
+- **2026-11-18** — refinamento das telas pelo usuário (sem rodar testes, a pedido dele):
+  Novo pedido enxuto (contato num botão, cartões por cor, painel de resumo, só nome
+  obrigatório), menu Exibir (sinal/caução), títulos menores, degradê verde, fundos e
+  cartões "gelo" no Estoque. A partir daqui: **Git, GitHub e testes só quando ele pedir**.

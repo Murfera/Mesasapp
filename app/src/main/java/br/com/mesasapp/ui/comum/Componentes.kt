@@ -81,7 +81,8 @@ fun T(
 }
 
 @Composable
-fun Titulo(texto: String, tamanho: TextUnit = 26.sp, modifier: Modifier = Modifier) =
+/** Titulo de pagina. Um tamanho so em todas as telas (pedido do usuario: menor, para caber sem rolar). */
+fun Titulo(texto: String, tamanho: TextUnit = 20.sp, modifier: Modifier = Modifier) =
     T(texto, tamanho, 600, fonte = SpaceGrotesk, modifier = modifier)
 
 @Composable
@@ -308,7 +309,7 @@ fun Botao(
         modifier
             .height(altura)
             .clip(forma)
-            .background(fundo)
+            .then(if (estilo == EstiloBotao.PRIMARIO) Modifier.background(Cores.GradienteVerde) else Modifier.background(fundo))
             .then(if (borda != null) Modifier.border(1.dp, borda, forma) else Modifier)
             .clickable(role = Role.Button, onClick = aoTocar)
             .padding(horizontal = 12.dp),

@@ -98,7 +98,7 @@ fun DetalheTela(vm: MesasViewModel) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f)) {
                 T("Pedido #${o.id}", 13.sp, 400, Cores.Suave)
-                Titulo(o.cliente, 24.sp, Modifier.padding(top = 4.dp))
+                Titulo(o.cliente, modifier = Modifier.padding(top = 2.dp))
             }
             PilulaStatus(o.status, Modifier.testTag("status_pedido"))
         }
