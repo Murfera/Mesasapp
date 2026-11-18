@@ -27,7 +27,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.mesasapp.domain.CADEIRAS_POR_MESA_PADRAO
 import br.com.mesasapp.domain.Cor
+import br.com.mesasapp.domain.Precos
 import br.com.mesasapp.domain.FiltroMaterial
 import br.com.mesasapp.domain.Material
 import br.com.mesasapp.domain.Modelo
@@ -67,7 +69,7 @@ fun EstoqueTela(vm: MesasViewModel) {
                         Modifier.weight(1f).height(44.dp)
                             .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
                             .clip(RoundedCornerShape(9.dp))
-                            .background(if (sel) Cores.Branco else Color.Transparent)
+                            .background(if (sel) Cores.Superficie else Color.Transparent)
                             .clickable(role = Role.Tab) { vm.estoqueMaterial = m }
                             .testTag("aba_material_${m.name}"),
                         contentAlignment = Alignment.Center
@@ -91,11 +93,12 @@ fun EstoqueTela(vm: MesasViewModel) {
                         }
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             T("Cadeiras por mesa", 10.sp, 400, Cores.Texto2, umaLinha = true)
+                            // Vazio = padrao de 4 (aparece em cinza). Guardado como 0.
                             CampoNumero(
-                                precos.cadeirasPorMesa(mat, cor).toLong(),
+                                (precos.cadeirasPorMesa[Precos.chaveCadeiras(mat, cor)] ?: 0).toLong(),
                                 { vm.definirCadeirasPorMesa(mat, cor, it) },
                                 Modifier.fillMaxWidth().testTag("cpm_${mat.name}_${cor.name}"),
-                                minimo = 1, altura = 44.dp, paddingH = 8.dp
+                                minimo = 1, placeholder = CADEIRAS_POR_MESA_PADRAO.toString(), altura = 44.dp, paddingH = 8.dp
                             )
                         }
                     }

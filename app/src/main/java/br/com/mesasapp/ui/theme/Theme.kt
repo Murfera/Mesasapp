@@ -1,9 +1,14 @@
 package br.com.mesasapp.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -12,36 +17,154 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import br.com.mesasapp.R
 
-/** Cores do prototipo (handoff/prototype/Main.dc.html). */
+/**
+ * Paleta do app. A clara e a do prototipo (handoff/prototype/Main.dc.html); a
+ * escura e derivada dela e entra sozinha quando o Android esta no modo escuro.
+ *
+ * [verde] e o fundo dos botoes cheios; [destaque] e o verde usado em texto,
+ * icone e borda. No claro sao a mesma cor; no escuro o texto precisa de um verde
+ * mais claro para ter contraste com o fundo escuro.
+ */
+data class Paleta(
+    val fundo: Color,
+    val superficie: Color,
+    val sobreVerde: Color,
+    val texto: Color,
+    val texto2: Color,
+    val suave: Color,
+    val borda: Color,
+    val bordaCampo: Color,
+    val linha: Color,
+    val tracejado: Color,
+    val bolinha: Color,
+    val placeholder: Color,
+    val verde: Color,
+    val destaque: Color,
+    val verdeEscuro: Color,
+    val verdeClaro: Color,
+    val verdeTexto: Color,
+    val verdeBorda: Color,
+    val cinza: Color,
+    val abas: Color,
+    val laranja: Color,
+    val laranjaClaro: Color,
+    val azul: Color,
+    val azulClaro: Color,
+    val pontoEntrega: Color,
+    val pontoRetirada: Color,
+    val roxo: Color,
+    val roxoClaro: Color,
+    val cinzaStatus: Color,
+    val cinzaStatusTexto: Color,
+    val qrFundo: Color
+)
+
+val PaletaClara = Paleta(
+    fundo = Color(0xFFF6F7F5),
+    superficie = Color(0xFFFFFFFF),
+    sobreVerde = Color(0xFFFFFFFF),
+    texto = Color(0xFF16201E),
+    texto2 = Color(0xFF3D4744),
+    suave = Color(0xFF5B6763),
+    borda = Color(0xFFE2E6E3),
+    bordaCampo = Color(0xFFC5CDC9),
+    linha = Color(0xFFEEF1EF),
+    tracejado = Color(0xFFD5DBD8),
+    bolinha = Color(0xFFA9B3AE),
+    placeholder = Color(0xFFA9B3AE),
+    verde = Color(0xFF0F6B5C),
+    destaque = Color(0xFF0F6B5C),
+    verdeEscuro = Color(0xFF0B5A4D),
+    verdeClaro = Color(0xFFE3F1EE),
+    verdeTexto = Color(0xFFCFE7E1),
+    verdeBorda = Color(0xFF5FA597),
+    cinza = Color(0xFFF1F4F2),
+    abas = Color(0xFFE6EAE8),
+    laranja = Color(0xFF9A3412),
+    laranjaClaro = Color(0xFFFDEDE3),
+    azul = Color(0xFF1E40AF),
+    azulClaro = Color(0xFFE7EEFD),
+    pontoEntrega = Color(0xFF1D4ED8),
+    pontoRetirada = Color(0xFFC2410C),
+    roxo = Color(0xFF5B3C99),
+    roxoClaro = Color(0xFFF3EEFB),
+    cinzaStatus = Color(0xFFEEF0EF),
+    cinzaStatusTexto = Color(0xFF47514E),
+    qrFundo = Color(0xFFFBFCFB)
+)
+
+val PaletaEscura = Paleta(
+    fundo = Color(0xFF0F1513),
+    superficie = Color(0xFF1A2220),
+    sobreVerde = Color(0xFFFFFFFF),
+    texto = Color(0xFFE6ECE9),
+    texto2 = Color(0xFFC3CCC8),
+    suave = Color(0xFF9AA6A1),
+    borda = Color(0xFF2C3633),
+    bordaCampo = Color(0xFF4A5652),
+    linha = Color(0xFF26302D),
+    tracejado = Color(0xFF3A4541),
+    // Borda mais clara: a bolinha da cor Preta precisa aparecer no fundo escuro.
+    bolinha = Color(0xFF9AA6A1),
+    placeholder = Color(0xFF6B7773),
+    verde = Color(0xFF1F7D6C),
+    destaque = Color(0xFF5CC2AE),
+    verdeEscuro = Color(0xFF8ED8C6),
+    verdeClaro = Color(0xFF183A33),
+    verdeTexto = Color(0xFFCFE7E1),
+    verdeBorda = Color(0xFF6FB8A9),
+    cinza = Color(0xFF222A28),
+    abas = Color(0xFF222A28),
+    laranja = Color(0xFFF2A57E),
+    laranjaClaro = Color(0xFF3A2218),
+    azul = Color(0xFF9DB6F5),
+    azulClaro = Color(0xFF1C2A4D),
+    pontoEntrega = Color(0xFF6B8EF0),
+    pontoRetirada = Color(0xFFF07A45),
+    roxo = Color(0xFFC9B6F0),
+    roxoClaro = Color(0xFF2E2540),
+    cinzaStatus = Color(0xFF2A302E),
+    cinzaStatusTexto = Color(0xFFB9C2BE),
+    qrFundo = Color(0xFF1F2826)
+)
+
+private val LocalPaleta = staticCompositionLocalOf { PaletaClara }
+
+/** Atalho para a paleta do tema atual: `Cores.Texto`, `Cores.Superficie`... */
 object Cores {
-    val Fundo = Color(0xFFF6F7F5)
-    val Branco = Color(0xFFFFFFFF)
-    val Texto = Color(0xFF16201E)
-    val Texto2 = Color(0xFF3D4744)
-    val Suave = Color(0xFF5B6763)
-    val Borda = Color(0xFFE2E6E3)
-    val BordaCampo = Color(0xFFC5CDC9)
-    val Linha = Color(0xFFEEF1EF)
-    val Tracejado = Color(0xFFD5DBD8)
-    val Bolinha = Color(0xFFA9B3AE)
-    val Verde = Color(0xFF0F6B5C)
-    val VerdeEscuro = Color(0xFF0B5A4D)
-    val VerdeClaro = Color(0xFFE3F1EE)
-    val VerdeTexto = Color(0xFFCFE7E1)
-    val VerdeBorda = Color(0xFF5FA597)
-    val Cinza = Color(0xFFF1F4F2)
-    val Abas = Color(0xFFE6EAE8)
-    val Laranja = Color(0xFF9A3412)
-    val LaranjaClaro = Color(0xFFFDEDE3)
-    val Azul = Color(0xFF1E40AF)
-    val AzulClaro = Color(0xFFE7EEFD)
-    val PontoEntrega = Color(0xFF1D4ED8)
-    val PontoRetirada = Color(0xFFC2410C)
-    val Roxo = Color(0xFF5B3C99)
-    val RoxoClaro = Color(0xFFF3EEFB)
-    val CinzaStatus = Color(0xFFEEF0EF)
-    val CinzaStatusTexto = Color(0xFF47514E)
-    val QrFundo = Color(0xFFFBFCFB)
+    private val p: Paleta @Composable @ReadOnlyComposable get() = LocalPaleta.current
+
+    val Fundo @Composable @ReadOnlyComposable get() = p.fundo
+    val Superficie @Composable @ReadOnlyComposable get() = p.superficie
+    val SobreVerde @Composable @ReadOnlyComposable get() = p.sobreVerde
+    val Texto @Composable @ReadOnlyComposable get() = p.texto
+    val Texto2 @Composable @ReadOnlyComposable get() = p.texto2
+    val Suave @Composable @ReadOnlyComposable get() = p.suave
+    val Borda @Composable @ReadOnlyComposable get() = p.borda
+    val BordaCampo @Composable @ReadOnlyComposable get() = p.bordaCampo
+    val Linha @Composable @ReadOnlyComposable get() = p.linha
+    val Tracejado @Composable @ReadOnlyComposable get() = p.tracejado
+    val Bolinha @Composable @ReadOnlyComposable get() = p.bolinha
+    val Placeholder @Composable @ReadOnlyComposable get() = p.placeholder
+    val Verde @Composable @ReadOnlyComposable get() = p.verde
+    val Destaque @Composable @ReadOnlyComposable get() = p.destaque
+    val VerdeEscuro @Composable @ReadOnlyComposable get() = p.verdeEscuro
+    val VerdeClaro @Composable @ReadOnlyComposable get() = p.verdeClaro
+    val VerdeTexto @Composable @ReadOnlyComposable get() = p.verdeTexto
+    val VerdeBorda @Composable @ReadOnlyComposable get() = p.verdeBorda
+    val Cinza @Composable @ReadOnlyComposable get() = p.cinza
+    val Abas @Composable @ReadOnlyComposable get() = p.abas
+    val Laranja @Composable @ReadOnlyComposable get() = p.laranja
+    val LaranjaClaro @Composable @ReadOnlyComposable get() = p.laranjaClaro
+    val Azul @Composable @ReadOnlyComposable get() = p.azul
+    val AzulClaro @Composable @ReadOnlyComposable get() = p.azulClaro
+    val PontoEntrega @Composable @ReadOnlyComposable get() = p.pontoEntrega
+    val PontoRetirada @Composable @ReadOnlyComposable get() = p.pontoRetirada
+    val Roxo @Composable @ReadOnlyComposable get() = p.roxo
+    val RoxoClaro @Composable @ReadOnlyComposable get() = p.roxoClaro
+    val CinzaStatus @Composable @ReadOnlyComposable get() = p.cinzaStatus
+    val CinzaStatusTexto @Composable @ReadOnlyComposable get() = p.cinzaStatusTexto
+    val QrFundo @Composable @ReadOnlyComposable get() = p.qrFundo
 }
 
 private fun variavel(res: Int, peso: Int) =
@@ -55,28 +178,35 @@ val SpaceGrotesk = FontFamily(
     variavel(R.font.space_grotesk, 500), variavel(R.font.space_grotesk, 600), variavel(R.font.space_grotesk, 700)
 )
 
-private val Esquema = lightColorScheme(
-    primary = Cores.Verde,
-    onPrimary = Cores.Branco,
-    background = Cores.Fundo,
-    onBackground = Cores.Texto,
-    surface = Cores.Branco,
-    onSurface = Cores.Texto,
-    surfaceContainerHigh = Cores.Branco,
-    surfaceContainerHighest = Cores.Branco,
-    outline = Cores.BordaCampo
-)
+private fun esquema(p: Paleta, escuro: Boolean) = if (escuro) {
+    darkColorScheme(
+        primary = p.destaque, onPrimary = Color(0xFF00382F), background = p.fundo, onBackground = p.texto,
+        surface = p.superficie, onSurface = p.texto, onSurfaceVariant = p.texto2,
+        surfaceContainerHigh = p.superficie, surfaceContainerHighest = p.superficie, outline = p.bordaCampo
+    )
+} else {
+    lightColorScheme(
+        primary = p.verde, onPrimary = p.sobreVerde, background = p.fundo, onBackground = p.texto,
+        surface = p.superficie, onSurface = p.texto, onSurfaceVariant = p.texto2,
+        surfaceContainerHigh = p.superficie, surfaceContainerHighest = p.superficie, outline = p.bordaCampo
+    )
+}
 
-private val base = TextStyle(fontFamily = Inter, color = Cores.Texto)
+private fun tipografia(cor: Color): Typography {
+    val base = TextStyle(fontFamily = Inter, color = cor)
+    return Typography(
+        bodyLarge = base, bodyMedium = base, bodySmall = base,
+        labelLarge = base, labelMedium = base, labelSmall = base,
+        titleLarge = base, titleMedium = base, titleSmall = base,
+        headlineLarge = base, headlineMedium = base, headlineSmall = base
+    )
+}
 
-private val Tipografia = Typography(
-    bodyLarge = base, bodyMedium = base, bodySmall = base,
-    labelLarge = base, labelMedium = base, labelSmall = base,
-    titleLarge = base, titleMedium = base, titleSmall = base,
-    headlineLarge = base, headlineMedium = base, headlineSmall = base
-)
-
+/** Segue o modo claro/escuro do Android (Configuracoes > Tela > Tema escuro). */
 @Composable
-fun MesasappTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = Esquema, typography = Tipografia, content = content)
+fun MesasappTheme(escuro: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val paleta = if (escuro) PaletaEscura else PaletaClara
+    CompositionLocalProvider(LocalPaleta provides paleta) {
+        MaterialTheme(colorScheme = esquema(paleta, escuro), typography = tipografia(paleta.texto), content = content)
+    }
 }

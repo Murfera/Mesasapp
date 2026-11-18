@@ -203,7 +203,7 @@ fun NovoTela(vm: MesasViewModel) {
                                     T(l.diariaCentavos.formatAsBrl() + "/dia", 12.sp, 400, Cores.Texto2, Modifier.padding(top = 2.dp))
                                 }
                                 Box(
-                                    Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(Cores.Branco)
+                                    Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(Cores.Superficie)
                                         .border(1.dp, Cores.Borda, RoundedCornerShape(10.dp))
                                         .clickable(role = Role.Button) { vm.removerItem(i) }
                                         .semantics { contentDescription = "Remover " + l.titulo },
@@ -259,7 +259,7 @@ fun NovoTela(vm: MesasViewModel) {
 
         // Resumo do dinheiro, sempre visivel no rodape.
         Column(
-            Modifier.fillMaxWidth().shadow(8.dp).background(Cores.Branco).padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp),
+            Modifier.fillMaxWidth().shadow(8.dp).background(Cores.Superficie).padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             LinhaValor(rotuloAluguel(c.dias, c.diariaCentavos), c.aluguelCentavos.formatAsBrl())
@@ -290,8 +290,8 @@ private fun OpcaoModelo(m: Modelo, selecionado: Boolean, diaria: Long, livres: I
     val forma = RoundedCornerShape(10.dp)
     Row(
         Modifier.fillMaxWidth().clip(forma)
-            .background(if (selecionado) Cores.VerdeClaro else Cores.Branco)
-            .border(1.dp, if (selecionado) Cores.Verde else Cores.Borda, forma)
+            .background(if (selecionado) Cores.VerdeClaro else Cores.Superficie)
+            .border(1.dp, if (selecionado) Cores.Destaque else Cores.Borda, forma)
             .clickable(role = Role.Button, onClick = aoTocar)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .testTag("modelo_${m.id}"),
@@ -315,7 +315,7 @@ private fun CampoData(rotulo: String, data: LocalDate, aoEscolher: (LocalDate) -
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Rotulo(rotulo)
         Box(
-            Modifier.fillMaxWidth().height(48.dp).clip(forma).background(Cores.Branco).border(1.dp, Cores.BordaCampo, forma)
+            Modifier.fillMaxWidth().height(48.dp).clip(forma).background(Cores.Superficie).border(1.dp, Cores.BordaCampo, forma)
                 .clickable(role = Role.Button) { aberto = true }.padding(horizontal = 14.dp)
                 .testTag("data_$rotulo"),
             contentAlignment = Alignment.CenterStart
@@ -329,9 +329,9 @@ private fun CampoData(rotulo: String, data: LocalDate, aoEscolher: (LocalDate) -
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { aoEscolher(Datas.dataDeMillisUtc(it)) }
                     aberto = false
-                }) { T("OK", 14.sp, 600, Cores.Verde) }
+                }) { T("OK", 14.sp, 600, Cores.Destaque) }
             },
-            dismissButton = { TextButton(onClick = { aberto = false }) { T("Cancelar", 14.sp, 600, Cores.Verde) } }
+            dismissButton = { TextButton(onClick = { aberto = false }) { T("Cancelar", 14.sp, 600, Cores.Destaque) } }
         ) { DatePicker(state = state) }
     }
 }

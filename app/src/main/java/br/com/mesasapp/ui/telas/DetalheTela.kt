@@ -119,7 +119,7 @@ fun DetalheTela(vm: MesasViewModel) {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Call, null, tint = Cores.Suave, modifier = Modifier.size(18.dp))
-                T(o.telefone, 14.sp, 600, Cores.Verde, Modifier.clickable(role = Role.Button) { Links.ligar(contexto, o.telefone) })
+                T(o.telefone, 14.sp, 600, Cores.Destaque, Modifier.clickable(role = Role.Button) { Links.ligar(contexto, o.telefone) })
             }
         }
 
@@ -186,7 +186,7 @@ fun DetalheTela(vm: MesasViewModel) {
                 }
             }
 
-            Cartao(espaco = 8.dp, borda = BorderStroke(2.dp, Cores.Verde)) {
+            Cartao(espaco = 8.dp, borda = BorderStroke(2.dp, Cores.Destaque)) {
                 T("Total refeito", 15.sp, 600, modifier = Modifier.padding(bottom = 2.dp))
                 LinhaValor("Total do aluguel", c.totalCentavos.formatAsBrl())
                 LinhaValor("+ Avarias e faltas", fec.avariasCentavos.formatAsBrl())
@@ -224,7 +224,7 @@ fun DetalheTela(vm: MesasViewModel) {
         // --- Pix ---
         Cartao(espaco = 12.dp) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Icon(Icons.Outlined.QrCode2, null, tint = Cores.Verde, modifier = Modifier.size(22.dp))
+                Icon(Icons.Outlined.QrCode2, null, tint = Cores.Destaque, modifier = Modifier.size(22.dp))
                 Column {
                     T("Cobrar com Pix", 15.sp, 600)
                     T("QR Code e copia e cola para enviar ao cliente.", 13.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
@@ -270,7 +270,7 @@ fun DetalheTela(vm: MesasViewModel) {
                         if (qr != null) {
                             Image(
                                 qr, "QR Code do Pix",
-                                Modifier.size(208.dp).clip(RoundedCornerShape(8.dp)).background(Cores.Branco),
+                                Modifier.size(208.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),
                                 filterQuality = FilterQuality.None
                             )
                         } else {
@@ -298,7 +298,7 @@ fun DetalheTela(vm: MesasViewModel) {
                             atual.second.replace(Regex(" \\(.*\\)"), "") + ": " + valor.formatAsBrl() +
                             "\n\nPix copia e cola:\n" + codigo + "\n\nRecebedor: " + nome
                         Botao("Enviar no WhatsApp", { Links.abrir(contexto, Links.whatsApp(o.telefone, texto)) }, Modifier.weight(1.3f)) {
-                            Icon(Icons.Outlined.Chat, null, tint = Cores.Branco, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Chat, null, tint = Cores.SobreVerde, modifier = Modifier.size(18.dp))
                         }
                     }
                 } else {

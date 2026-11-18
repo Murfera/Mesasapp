@@ -95,7 +95,7 @@ fun Cartao(
     padding: PaddingValues = PaddingValues(16.dp),
     espaco: Dp = 14.dp,
     borda: BorderStroke = BorderStroke(1.dp, Cores.Borda),
-    fundo: Color = Cores.Branco,
+    fundo: Color = Cores.Superficie,
     aoTocar: (() -> Unit)? = null,
     conteudo: @Composable ColumnScope.() -> Unit
 ) {
@@ -120,6 +120,7 @@ fun Pilula(texto: String, fundo: Color, cor: Color, modifier: Modifier = Modifie
     }
 }
 
+@Composable
 fun corStatus(s: StatusPedido): Pair<Color, Color> = when (s) {
     StatusPedido.ORCAMENTO -> Cores.RoxoClaro to Cores.Roxo
     StatusPedido.CONFIRMADO -> Cores.AzulClaro to Cores.Azul
@@ -145,9 +146,9 @@ fun Chip(
 ) {
     val forma = RoundedCornerShape(altura / 2)
     val (fundo, cor, borda) = when {
-        marcado && escuro -> Triple(Cores.Texto, Cores.Branco, Cores.Texto)
-        marcado -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Verde)
-        else -> Triple(Cores.Branco, Cores.Texto, Cores.BordaCampo)
+        marcado && escuro -> Triple(Cores.Texto, Cores.Superficie, Cores.Texto)
+        marcado -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Destaque)
+        else -> Triple(Cores.Superficie, Cores.Texto, Cores.BordaCampo)
     }
     Box(
         modifier
@@ -192,7 +193,7 @@ fun CampoBase(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = teclado),
         textStyle = TextStyle(fontFamily = Inter, fontSize = tamanho, fontWeight = FontWeight(peso), color = Cores.Texto, textAlign = alinhar),
-        cursorBrush = SolidColor(Cores.Verde),
+        cursorBrush = SolidColor(Cores.Destaque),
         modifier = modifier
             .height(altura)
             .onFocusChanged { focado = it.isFocused; aoFocar(it.isFocused) },
@@ -202,13 +203,13 @@ fun CampoBase(
                     .fillMaxWidth()
                     .height(altura)
                     .clip(forma)
-                    .background(Cores.Branco)
-                    .border(if (focado) 2.dp else 1.dp, if (focado) Cores.Verde else Cores.BordaCampo, forma)
+                    .background(Cores.Superficie)
+                    .border(if (focado) 2.dp else 1.dp, if (focado) Cores.Destaque else Cores.BordaCampo, forma)
                     .padding(horizontal = paddingH),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (valor.isEmpty() && placeholder.isNotEmpty()) {
-                    T(placeholder, tamanho, 400, Cores.Bolinha, Modifier.fillMaxWidth(), alinhar = alinhar, umaLinha = true)
+                    T(placeholder, tamanho, 400, Cores.Placeholder, Modifier.fillMaxWidth(), alinhar = alinhar, umaLinha = true)
                 }
                 campo()
             }
@@ -234,10 +235,16 @@ fun Campo(
 }
 
 /**
- * Campo numerico ligado a um valor salvo (estoque, precos). Pode ser apagado:
- * enquanto a pessoa digita, o campo fica vazio e o minimo so vale no calculo.
- * O texto so e reescrito de fora quando o campo nao esta em uso, para a volta
- * do valor salvo nao atropelar a digitacao.
+ * Campo numerico ligado a um valor salvo (estoque, precos).
+ *
+ * - **Zero aparece vazio**, e vazio vale zero: o estoque comeca limpo, sem uma
+ *   fileira de "0" para apagar.
+ * - Pode ser apagado enquanto a pessoa digita; [minimo] so vale para o que foi
+ *   digitado (vazio continua zero).
+ * - [placeholder] aparece em cinza no campo vazio, para mostrar o padrao
+ *   (ex.: "4" cadeiras por mesa).
+ * - O texto so e reescrito de fora quando o campo nao esta em uso, para a volta
+ *   do valor salvo nao atropelar a digitacao.
  */
 @Composable
 fun CampoNumero(
@@ -246,14 +253,18 @@ fun CampoNumero(
     modifier: Modifier = Modifier,
     dinheiro: Boolean = false,
     minimo: Long = 0,
+    placeholder: String = "",
     altura: Dp = 48.dp,
     paddingH: Dp = 10.dp,
     alinhar: TextAlign = TextAlign.Start,
     tamanho: TextUnit = 16.sp,
     peso: Int = 400
 ) {
-    val formatar: (Long) -> String = { if (dinheiro) centavosParaCampo(it) else it.toString() }
-    val ler: (String) -> Long = { s -> ((if (dinheiro) s.toCentsOrNull() else s.trim().toLongOrNull()) ?: minimo).coerceAtLeast(minimo) }
+    val formatar: (Long) -> String = { v -> if (v == 0L) "" else if (dinheiro) centavosParaCampo(v) else v.toString() }
+    val ler: (String) -> Long = { s ->
+        if (s.isBlank()) 0L
+        else ((if (dinheiro) s.toCentsOrNull() else s.trim().toLongOrNull()) ?: 0L).coerceAtLeast(minimo)
+    }
     var texto by remember { mutableStateOf(formatar(valor)) }
     var focado by remember { mutableStateOf(false) }
     LaunchedEffect(valor, focado) {
@@ -267,6 +278,7 @@ fun CampoNumero(
             aoMudar(ler(limpo))
         },
         modifier,
+        placeholder = placeholder,
         teclado = if (dinheiro) KeyboardType.Decimal else KeyboardType.Number,
         altura = altura, paddingH = paddingH, alinhar = alinhar, tamanho = tamanho, peso = peso,
         aoFocar = { focado = it }
@@ -286,11 +298,11 @@ fun Botao(
 ) {
     val forma = RoundedCornerShape(raio)
     val (fundo, cor, borda) = when (estilo) {
-        EstiloBotao.PRIMARIO -> Triple(Cores.Verde, Cores.Branco, null)
-        EstiloBotao.CONTORNO -> Triple(Cores.Branco, Cores.Verde, Cores.Verde)
-        EstiloBotao.SUAVE -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Verde)
+        EstiloBotao.PRIMARIO -> Triple(Cores.Verde, Cores.SobreVerde, null)
+        EstiloBotao.CONTORNO -> Triple(Cores.Superficie, Cores.Destaque, Cores.Destaque)
+        EstiloBotao.SUAVE -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Destaque)
         EstiloBotao.SUAVE_SEM_BORDA -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, null)
-        EstiloBotao.NEUTRO -> Triple(Cores.Branco, Cores.Texto, Cores.BordaCampo)
+        EstiloBotao.NEUTRO -> Triple(Cores.Superficie, Cores.Texto, Cores.BordaCampo)
     }
     Row(
         modifier
@@ -318,7 +330,7 @@ fun BotaoPasso(sinal: String, descricao: String, aoTocar: () -> Unit, modifier: 
         modifier
             .size(44.dp)
             .clip(forma)
-            .background(Cores.Branco)
+            .background(Cores.Superficie)
             .border(1.dp, Cores.BordaCampo, forma)
             .clickable(role = Role.Button, onClick = aoTocar)
             .semantics(mergeDescendants = true) { contentDescription = descricao },
@@ -337,8 +349,9 @@ fun LinhaValor(rotulo: String, valor: String, modifier: Modifier = Modifier, tam
 
 @Composable
 fun Tracejado(modifier: Modifier = Modifier) {
+    val cor = Cores.Tracejado
     Canvas(modifier.fillMaxWidth().height(1.dp)) {
-        drawLine(Cores.Tracejado, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
+        drawLine(cor, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
     }
 }
 
@@ -374,8 +387,8 @@ fun Voltar(texto: String, aoTocar: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = Cores.Verde, modifier = Modifier.size(24.dp))
-        T(texto, 14.sp, 600, Cores.Verde)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = Cores.Destaque, modifier = Modifier.size(24.dp))
+        T(texto, 14.sp, 600, Cores.Destaque)
     }
 }
 

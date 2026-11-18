@@ -109,7 +109,7 @@ fun MesasappApp(container: AppContainer) {
 @Composable
 private fun BarraSuperior(vm: MesasViewModel) {
     val filtro by vm.filtro.collectAsState()
-    Column(Modifier.background(Cores.Branco).windowInsetsPadding(WindowInsets.statusBars)) {
+    Column(Modifier.background(Cores.Superficie).windowInsetsPadding(WindowInsets.statusBars)) {
         Row(
             Modifier.fillMaxWidth().height(56.dp).padding(start = 20.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -145,7 +145,7 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
         onDismissRequest = { vm.menuAberto = false; vm.menuMaterialAberto = false },
         offset = DpOffset((-4).dp, 0.dp),
         shape = RoundedCornerShape(12.dp),
-        containerColor = Cores.Branco,
+        containerColor = Cores.Superficie,
         modifier = Modifier.width(220.dp).padding(horizontal = 6.dp)
     ) {
         ItemMenu(Icons.Outlined.Layers, "Material", filtro.rotulo, Modifier.testTag("menu_material"), vm.menuMaterialAberto) {
@@ -164,7 +164,7 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Filled.Check, null, tint = if (sel) Cores.Verde else Color.Transparent, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Check, null, tint = if (sel) Cores.Destaque else Color.Transparent, modifier = Modifier.size(16.dp))
                         T(f.rotulo, 14.sp, if (sel) 600 else 500)
                     }
                 }
@@ -198,12 +198,12 @@ private fun ItemMenu(icone: ImageVector, texto: String, atual: String?, modifier
 
 @Composable
 private fun BarraDeAbas(vm: MesasViewModel) {
-    Column(Modifier.background(Cores.Branco)) {
+    Column(Modifier.background(Cores.Superficie)) {
         Divisor(cor = Cores.Borda)
         Row(Modifier.fillMaxWidth().height(74.dp).padding(bottom = 6.dp)) {
             ABAS.forEach { aba ->
                 val ativa = vm.tela == aba.tela || (aba.tela == Tela.PEDIDOS && vm.tela == Tela.DETALHE)
-                val cor = if (ativa) Cores.Verde else Cores.Suave
+                val cor = if (ativa) Cores.Destaque else Cores.Suave
                 Column(
                     Modifier.weight(1f).fillMaxSize().clickable(role = Role.Tab) { vm.irPara(aba.tela) }.testTag("aba_${aba.titulo}"),
                     horizontalAlignment = Alignment.CenterHorizontally,

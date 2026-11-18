@@ -1,0 +1,4 @@
+<resources>
+    <!-- Fundo da janela no modo escuro do Android, antes do primeiro frame. -->
+    <color name="fundo">#0F1513</color>
+</resources>

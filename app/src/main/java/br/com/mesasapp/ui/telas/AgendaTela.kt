@@ -90,7 +90,7 @@ fun AgendaTela(vm: MesasViewModel) {
                                 Column(
                                     Modifier.fillMaxSize().clip(forma)
                                         .background(if (selecionado) Cores.Verde else Color.Transparent)
-                                        .border(1.dp, if (selecionado || ehHoje) Cores.Verde else Color.Transparent, forma)
+                                        .border(1.dp, if (selecionado || ehHoje) Cores.Destaque else Color.Transparent, forma)
                                         .clickable(role = Role.Button) { vm.diaCalendario = dia }
                                         .semantics(mergeDescendants = true) { contentDescription = desc },
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -98,7 +98,7 @@ fun AgendaTela(vm: MesasViewModel) {
                                 ) {
                                     T(
                                         dia.dayOfMonth.toString(), 14.sp, if (selecionado || ehHoje) 600 else 400,
-                                        when { selecionado -> Cores.Branco; ehHoje -> Cores.VerdeEscuro; else -> Cores.Texto }
+                                        when { selecionado -> Cores.SobreVerde; ehHoje -> Cores.VerdeEscuro; else -> Cores.Texto }
                                     )
                                     Row(Modifier.height(6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                                         if (ent > 0) Ponto(Cores.PontoEntrega, 6)

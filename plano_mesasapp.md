@@ -31,8 +31,12 @@ visual, texto ou fluxo, **o protótipo manda**.
   / Outro valor, QR, copia e cola, WhatsApp) e o botão da próxima situação.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
   "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
-- Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`),
-  tema só claro.
+- Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`).
+  **Modo escuro segue o Android** (pedido do usuário): paleta escura derivada em
+  `ui/theme/Theme.kt`; as telas usam `Cores.X`, nunca cor fixa. `Cores.Verde` é o
+  fundo de botão cheio; `Cores.Destaque` é o verde de texto/ícone/borda.
+- **Campo numérico com zero aparece vazio** (vazio vale 0), pedido do usuário.
+  "Cadeiras por mesa" vazio = padrão 4, mostrado em cinza no campo.
 
 ---
 
@@ -109,7 +113,7 @@ quando o cliente paga** — baixa manual.
 ## 6. Feito
 
 - Interface inteira do protótipo (2026-11-18), com as regras de `core.mjs` portadas.
-- **25 testes passando**: 8 de regra (paridade com os números do protótipo, Pix e
+- **26 testes passando** (inclui o modo escuro abrindo todas as abas): 8 de regra (paridade com os números do protótipo, Pix e
   link do Google Agenda idênticos), 4 que clicam pelas telas (estoque, novo pedido,
   pedido confirmado → entregue → devolvido com quebra e Pix, filtro de material),
   6 de dinheiro, 7 do Pix.
@@ -200,3 +204,5 @@ mão do usuário e os toques caem no que ele estiver usando.
 - **2026-11-18** — interface refeita igual ao protótipo do usuário (`handoff/`):
   15 modelos fixos, menu ⋮ com Material/Preços/Config. Pix, vistoria com atraso e
   caução, Pix com opções, Google Agenda por link. Banco v3 (recriado). 25 testes.
+- **2026-11-18** — campos com zero ficam vazios; "cadeiras por mesa" vazio volta ao
+  padrão 4 (antes gravava 1 escondido); modo escuro automático do Android.

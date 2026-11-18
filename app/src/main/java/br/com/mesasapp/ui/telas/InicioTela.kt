@@ -94,7 +94,7 @@ fun InicioTela(vm: MesasViewModel) {
                 Titulo(saudacao(), 28.sp, Modifier.padding(top = 4.dp))
             }
             Botao("Novo pedido", { vm.irPara(Tela.NOVO) }, altura = 44.dp, raio = 22.dp) {
-                Icon(Icons.Filled.Add, null, tint = Cores.Branco, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Add, null, tint = Cores.SobreVerde, modifier = Modifier.size(18.dp))
             }
         }
 
@@ -115,13 +115,13 @@ fun InicioTela(vm: MesasViewModel) {
         ) {
             Column(Modifier.weight(1f)) {
                 T("A receber dos pedidos em aberto", 12.sp, 400, Cores.VerdeTexto)
-                Numero(aReceber.formatAsBrl(), 24.sp, Cores.Branco, Modifier.padding(top = 4.dp))
+                Numero(aReceber.formatAsBrl(), 24.sp, Cores.SobreVerde, Modifier.padding(top = 4.dp))
             }
             Box(
                 Modifier.height(40.dp).clip(RoundedCornerShape(20.dp)).border(1.dp, Cores.VerdeBorda, RoundedCornerShape(20.dp))
                     .clickable(role = Role.Button) { vm.irPara(Tela.PEDIDOS) }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center
-            ) { T("Ver pedidos", 13.sp, 600, Cores.Branco) }
+            ) { T("Ver pedidos", 13.sp, 600, Cores.SobreVerde) }
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

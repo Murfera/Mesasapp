@@ -1,5 +1,7 @@
 package br.com.mesasapp
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
@@ -102,7 +104,22 @@ class BotoesTest {
         // Apagar o campo nao trava: conta como zero.
         digitar("qtd_p-mesa-br", "")
         esperarNoCom("total_PLASTICO_MESA", "0 no total")
-        digitar("cpm_PLASTICO_BRANCA", "4")
+
+        // Cadeiras por mesa vazio volta ao padrao de 4 (nao grava 1 escondido).
+        digitar("qtd_p-mesa-br", "10")
+        digitar("cpm_PLASTICO_BRANCA", "")
+        esperarNoCom("jogos_PLASTICO_BRANCA", "10")
+
+        // Zero aparece vazio: ao sair e voltar para a aba, o campo nao mostra "0".
+        digitar("qtd_p-mesa-vm", "0")
+        aba("Início")
+        aba("Estoque")
+        toque("aba_material_PLASTICO")
+        esperarTag("qtd_p-mesa-vm")
+        assert(
+            regra.onNodeWithTag("qtd_p-mesa-vm").fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.EditableText)?.text.isNullOrEmpty()
+        )
     }
 
     @Test
