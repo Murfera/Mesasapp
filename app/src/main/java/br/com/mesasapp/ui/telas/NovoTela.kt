@@ -146,7 +146,7 @@ fun NovoTela(vm: MesasViewModel) {
                 T("Itens", 15.sp, 600)
                 // O que vai no jogo (1 mesa + N cadeiras) aparece na linha da quantidade.
                 val tipos = listOf(TipoLinha.JOGO, TipoLinha.MESA, TipoLinha.CADEIRA)
-                Segmentos(listOf("Jogo", "Só mesa", "Só cadeira"), tipos.indexOf(item.tipo), "tipo", destaque = true) { i ->
+                Segmentos(listOf("Jogo", "Mesa", "Cadeira"), tipos.indexOf(item.tipo), "tipo", destaque = true) { i ->
                     vm.itemForm = item.copy(tipo = tipos[i])
                 }
                 SeletorModelo(vm, filtro, precos) { id -> livre(id) - (c.uso[id] ?: 0) }
