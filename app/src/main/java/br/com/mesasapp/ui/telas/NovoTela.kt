@@ -123,12 +123,16 @@ fun NovoTela(vm: MesasViewModel) {
         ) {
             Titulo("Novo pedido")
 
-            Cartao {
+            Cartao(espaco = 10.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     T("Cliente", 15.sp, 600, modifier = Modifier.weight(1f))
                     BotaoDadosCliente(f) { vm.dadosClienteAbertos = true }
                 }
-                Campo("Nome", f.cliente, { vm.mudarForm(f.copy(cliente = it)) }, placeholder = "Nome completo", tag = "campo_cliente")
+                // Sem o rotulo "Nome": o texto de exemplo dentro do campo ja diz o que vai ali.
+                CampoBase(
+                    f.cliente, { vm.mudarForm(f.copy(cliente = it)) },
+                    Modifier.fillMaxWidth().testTag("campo_cliente"), placeholder = "Nome do cliente"
+                )
             }
 
             Cartao {
