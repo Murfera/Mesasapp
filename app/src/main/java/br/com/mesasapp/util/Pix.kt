@@ -48,9 +48,9 @@ object Pix {
                 append(campo("54", BigDecimal(valorCentavos).movePointLeft(2).toPlainString()))
             }
             append(campo("58", "BR"))
-            append(campo("59", limpar(nomeRecebedor, 25)))
-            append(campo("60", limpar(cidade, 15)))
-            append(campo("62", campo("05", limpar(identificador, 25).ifBlank { "***" })))
+            append(campo("59", limpar(nomeRecebedor, 25).ifBlank { "RECEBEDOR" }))
+            append(campo("60", limpar(cidade, 15).ifBlank { "CIDADE" }))
+            append(campo("62", campo("05", identificador.filter { it.isLetterOrDigit() && it.code < 128 }.take(25).ifBlank { "***" })))
         }
 
         val semCrc = corpo + "6304"
@@ -64,7 +64,8 @@ object Pix {
     internal fun limpar(texto: String, limite: Int): String =
         Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
             .replace(Regex("\\p{M}"), "")
-            .filter { it.code in 32..126 }
+            // Igual ao prototipo: so letras, numeros e espaco.
+            .filter { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == ' ' }
             .uppercase()
             .take(limite)
             .trim()

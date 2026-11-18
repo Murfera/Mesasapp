@@ -1,7 +1,7 @@
 <resources>
-    <!-- O tema visual vive no Compose (ui/theme). Aqui so o necessario para a janela
-         antes do primeiro frame do Compose. Variante noturna em values-night. -->
+    <!-- O visual vive no Compose (ui/theme), com as cores do prototipo. Tema so
+         claro, como o prototipo; aqui so o fundo da janela antes do primeiro frame. -->
     <style name="Theme.Mesasapp" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">?android:attr/colorBackground</item>
+        <item name="android:windowBackground">@color/fundo</item>
     </style>
 </resources>

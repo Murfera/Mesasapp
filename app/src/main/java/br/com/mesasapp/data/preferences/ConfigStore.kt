@@ -8,62 +8,68 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import br.com.mesasapp.domain.Cor
+import br.com.mesasapp.domain.FiltroMaterial
+import br.com.mesasapp.domain.Material
+import br.com.mesasapp.domain.PrecoPeca
+import br.com.mesasapp.domain.Precos
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "config")
 
-/**
- * Configuracao do negocio: dados da empresa, chave Pix e os padroes que a tela
- * de orcamento usa para nao perguntar o que quase nunca muda (hora de entrega,
- * hora de retirada, frete).
- */
-data class Config(
-    val nomeEmpresa: String = "",
-    val chavePix: String = "",
-    val nomeRecebedor: String = "",
-    val cidadeRecebedor: String = "",
-    val fretePadraoCentavos: Long = 0,
-    val horaEntregaPadrao: Int = 8,
-    val horaRetiradaPadrao: Int = 18
-) {
-    val pixConfigurado: Boolean
-        get() = chavePix.isNotBlank() && nomeRecebedor.isNotBlank() && cidadeRecebedor.isNotBlank()
-}
+data class PixConfig(val chave: String = "", val nome: String = "", val cidade: String = "")
 
+/**
+ * Configuracao que nao e pedido nem estoque: precos (menu > Precos), dados do
+ * Pix (menu > Config. Pix) e o filtro de material do menu.
+ */
 class ConfigStore(private val context: Context) {
 
-    private object Chaves {
-        val NOME_EMPRESA = stringPreferencesKey("nome_empresa")
-        val CHAVE_PIX = stringPreferencesKey("chave_pix")
-        val NOME_RECEBEDOR = stringPreferencesKey("nome_recebedor")
-        val CIDADE_RECEBEDOR = stringPreferencesKey("cidade_recebedor")
-        val FRETE_PADRAO = longPreferencesKey("frete_padrao")
-        val HORA_ENTREGA = intPreferencesKey("hora_entrega")
-        val HORA_RETIRADA = intPreferencesKey("hora_retirada")
-    }
+    private fun diaria(chave: String) = longPreferencesKey("diaria_$chave")
+    private fun reposicao(chave: String) = longPreferencesKey("reposicao_$chave")
+    private fun cadeiras(chave: String) = intPreferencesKey("cpm_$chave")
+    private val DESC_JOGO = longPreferencesKey("desconto_jogo")
+    private val FRETE = longPreferencesKey("frete_padrao_v2")
+    private val PIX_CHAVE = stringPreferencesKey("chave_pix")
+    private val PIX_NOME = stringPreferencesKey("nome_recebedor")
+    private val PIX_CIDADE = stringPreferencesKey("cidade_recebedor")
+    private val FILTRO = stringPreferencesKey("filtro_material")
 
-    val config: Flow<Config> = context.dataStore.data.map { prefs ->
-        Config(
-            nomeEmpresa = prefs[Chaves.NOME_EMPRESA].orEmpty(),
-            chavePix = prefs[Chaves.CHAVE_PIX].orEmpty(),
-            nomeRecebedor = prefs[Chaves.NOME_RECEBEDOR].orEmpty(),
-            cidadeRecebedor = prefs[Chaves.CIDADE_RECEBEDOR].orEmpty(),
-            fretePadraoCentavos = prefs[Chaves.FRETE_PADRAO] ?: 0L,
-            horaEntregaPadrao = prefs[Chaves.HORA_ENTREGA] ?: 8,
-            horaRetiradaPadrao = prefs[Chaves.HORA_RETIRADA] ?: 18
+    val precos: Flow<Precos> = context.dataStore.data.map { p ->
+        val padrao = Precos()
+        Precos(
+            tabela = Precos.TABELA_PADRAO.mapValues { (chave, base) ->
+                PrecoPeca(p[diaria(chave)] ?: base.diariaCentavos, p[reposicao(chave)] ?: base.reposicaoCentavos)
+            },
+            descontoJogoCentavos = p[DESC_JOGO] ?: padrao.descontoJogoCentavos,
+            fretePadraoCentavos = p[FRETE] ?: padrao.fretePadraoCentavos,
+            cadeirasPorMesa = Material.entries.flatMap { m -> Cor.entries.map { c -> Precos.chaveCadeiras(m, c) } }
+                .mapNotNull { k -> p[cadeiras(k)]?.let { k to it } }
+                .toMap()
         )
     }
 
-    suspend fun salvar(config: Config) {
-        context.dataStore.edit { prefs ->
-            prefs[Chaves.NOME_EMPRESA] = config.nomeEmpresa
-            prefs[Chaves.CHAVE_PIX] = config.chavePix
-            prefs[Chaves.NOME_RECEBEDOR] = config.nomeRecebedor
-            prefs[Chaves.CIDADE_RECEBEDOR] = config.cidadeRecebedor
-            prefs[Chaves.FRETE_PADRAO] = config.fretePadraoCentavos
-            prefs[Chaves.HORA_ENTREGA] = config.horaEntregaPadrao
-            prefs[Chaves.HORA_RETIRADA] = config.horaRetiradaPadrao
-        }
+    val pix: Flow<PixConfig> = context.dataStore.data.map { p ->
+        PixConfig(p[PIX_CHAVE].orEmpty(), p[PIX_NOME].orEmpty(), p[PIX_CIDADE].orEmpty())
     }
+
+    val filtro: Flow<FiltroMaterial> = context.dataStore.data.map { p ->
+        p[FILTRO]?.let { nome -> FiltroMaterial.entries.firstOrNull { it.name == nome } } ?: FiltroMaterial.TODOS
+    }
+
+    suspend fun definirDiaria(chave: String, centavos: Long) = context.dataStore.edit { it[diaria(chave)] = centavos }
+    suspend fun definirReposicao(chave: String, centavos: Long) = context.dataStore.edit { it[reposicao(chave)] = centavos }
+    suspend fun definirDescontoJogo(centavos: Long) = context.dataStore.edit { it[DESC_JOGO] = centavos }
+    suspend fun definirFrete(centavos: Long) = context.dataStore.edit { it[FRETE] = centavos }
+    suspend fun definirCadeirasPorMesa(material: Material, cor: Cor, n: Int) =
+        context.dataStore.edit { it[cadeiras(Precos.chaveCadeiras(material, cor))] = n }
+
+    suspend fun definirPix(pix: PixConfig) = context.dataStore.edit {
+        it[PIX_CHAVE] = pix.chave
+        it[PIX_NOME] = pix.nome
+        it[PIX_CIDADE] = pix.cidade
+    }
+
+    suspend fun definirFiltro(f: FiltroMaterial) = context.dataStore.edit { it[FILTRO] = f.name }
 }

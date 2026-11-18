@@ -1,0 +1,339 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "0501cb45459fd6ada17fd104714d8ad8",
+    "entities": [
+      {
+        "tableName": "estoque",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`modeloId` TEXT NOT NULL, `total` INTEGER NOT NULL, PRIMARY KEY(`modeloId`))",
+        "fields": [
+          {
+            "fieldPath": "modeloId",
+            "columnName": "modeloId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "total",
+            "columnName": "total",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "modeloId"
+          ]
+        }
+      },
+      {
+        "tableName": "pedido",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cliente` TEXT NOT NULL, `telefone` TEXT NOT NULL, `documento` TEXT NOT NULL, `endereco` TEXT NOT NULL, `referencia` TEXT NOT NULL, `inicioEpochSeg` INTEGER NOT NULL, `fimEpochSeg` INTEGER NOT NULL, `freteCentavos` INTEGER NOT NULL, `descontoCentavos` INTEGER NOT NULL, `sinalCentavos` INTEGER NOT NULL, `caucaoCentavos` INTEGER NOT NULL, `pagamento` TEXT NOT NULL, `status` TEXT NOT NULL, `atrasoDias` INTEGER NOT NULL, `finalCentavos` INTEGER, `criadoEmEpochSeg` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cliente",
+            "columnName": "cliente",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "telefone",
+            "columnName": "telefone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "documento",
+            "columnName": "documento",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endereco",
+            "columnName": "endereco",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "referencia",
+            "columnName": "referencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inicioEpochSeg",
+            "columnName": "inicioEpochSeg",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fimEpochSeg",
+            "columnName": "fimEpochSeg",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "freteCentavos",
+            "columnName": "freteCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descontoCentavos",
+            "columnName": "descontoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sinalCentavos",
+            "columnName": "sinalCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caucaoCentavos",
+            "columnName": "caucaoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pagamento",
+            "columnName": "pagamento",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "atrasoDias",
+            "columnName": "atrasoDias",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finalCentavos",
+            "columnName": "finalCentavos",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "criadoEmEpochSeg",
+            "columnName": "criadoEmEpochSeg",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedido_inicioEpochSeg",
+            "unique": false,
+            "columnNames": [
+              "inicioEpochSeg"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_inicioEpochSeg` ON `${TABLE_NAME}` (`inicioEpochSeg`)"
+          },
+          {
+            "name": "index_pedido_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ]
+      },
+      {
+        "tableName": "pedido_linha",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pedidoId` INTEGER NOT NULL, `tipo` TEXT NOT NULL, `mesaId` TEXT, `cadId` TEXT, `qtd` INTEGER NOT NULL, `cadeirasPorMesa` INTEGER NOT NULL, `precoUnitCentavos` INTEGER NOT NULL, FOREIGN KEY(`pedidoId`) REFERENCES `pedido`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pedidoId",
+            "columnName": "pedidoId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mesaId",
+            "columnName": "mesaId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cadId",
+            "columnName": "cadId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "qtd",
+            "columnName": "qtd",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cadeirasPorMesa",
+            "columnName": "cadeirasPorMesa",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "precoUnitCentavos",
+            "columnName": "precoUnitCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedido_linha_pedidoId",
+            "unique": false,
+            "columnNames": [
+              "pedidoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_linha_pedidoId` ON `${TABLE_NAME}` (`pedidoId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "pedido",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "pedidoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "pedido_peca",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pedidoId` INTEGER NOT NULL, `modeloId` TEXT NOT NULL, `quantidade` INTEGER NOT NULL, `reposicaoCentavos` INTEGER NOT NULL, `quebradas` INTEGER NOT NULL, `faltando` INTEGER NOT NULL, FOREIGN KEY(`pedidoId`) REFERENCES `pedido`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pedidoId",
+            "columnName": "pedidoId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeloId",
+            "columnName": "modeloId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantidade",
+            "columnName": "quantidade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reposicaoCentavos",
+            "columnName": "reposicaoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quebradas",
+            "columnName": "quebradas",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "faltando",
+            "columnName": "faltando",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedido_peca_pedidoId",
+            "unique": false,
+            "columnNames": [
+              "pedidoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_peca_pedidoId` ON `${TABLE_NAME}` (`pedidoId`)"
+          },
+          {
+            "name": "index_pedido_peca_modeloId",
+            "unique": false,
+            "columnNames": [
+              "modeloId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_peca_modeloId` ON `${TABLE_NAME}` (`modeloId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "pedido",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "pedidoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0501cb45459fd6ada17fd104714d8ad8')"
+    ]
+  }
+}

@@ -1,0 +1,322 @@
+{
+  "hoje": "2026-11-17",
+  "modelos": [
+    {
+      "id": "p-mesa-pr",
+      "tipo": "mesa",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Preta",
+      "total": 10,
+      "manut": 0
+    },
+    {
+      "id": "p-mesa-br",
+      "tipo": "mesa",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Branca",
+      "total": 40,
+      "manut": 0
+    },
+    {
+      "id": "p-mesa-vm",
+      "tipo": "mesa",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Vermelha",
+      "total": 8,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeira-pr",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Preta",
+      "total": 40,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeira-br",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Branca",
+      "total": 160,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeira-vm",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": false,
+      "cor": "Vermelha",
+      "total": 30,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeiraBraco-pr",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": true,
+      "cor": "Preta",
+      "total": 20,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeiraBraco-br",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": true,
+      "cor": "Branca",
+      "total": 40,
+      "manut": 0
+    },
+    {
+      "id": "p-cadeiraBraco-vm",
+      "tipo": "cadeira",
+      "material": "Plástico",
+      "braco": true,
+      "cor": "Vermelha",
+      "total": 10,
+      "manut": 0
+    },
+    {
+      "id": "m-mesa-pr",
+      "tipo": "mesa",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Preta",
+      "total": 20,
+      "manut": 0
+    },
+    {
+      "id": "m-mesa-br",
+      "tipo": "mesa",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Branca",
+      "total": 10,
+      "manut": 0
+    },
+    {
+      "id": "m-mesa-vm",
+      "tipo": "mesa",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Vermelha",
+      "total": 6,
+      "manut": 0
+    },
+    {
+      "id": "m-cadeira-pr",
+      "tipo": "cadeira",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Preta",
+      "total": 80,
+      "manut": 0
+    },
+    {
+      "id": "m-cadeira-br",
+      "tipo": "cadeira",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Branca",
+      "total": 40,
+      "manut": 0
+    },
+    {
+      "id": "m-cadeira-vm",
+      "tipo": "cadeira",
+      "material": "Metal",
+      "braco": false,
+      "cor": "Vermelha",
+      "total": 20,
+      "manut": 0
+    }
+  ],
+  "tabela": {
+    "p-mesa": {
+      "preco": 8,
+      "rep": 120
+    },
+    "p-cadeira": {
+      "preco": 3,
+      "rep": 45
+    },
+    "p-cadeiraBraco": {
+      "preco": 4,
+      "rep": 60
+    },
+    "m-mesa": {
+      "preco": 12,
+      "rep": 180
+    },
+    "m-cadeira": {
+      "preco": 5,
+      "rep": 80
+    }
+  },
+  "precos": {
+    "descJogo": 2,
+    "frete": 40,
+    "cadPorJogo": {}
+  },
+  "pedidos": [
+    {
+      "id": 1044,
+      "cliente": "Juliana Martins",
+      "tel": "(11) 91234-5678",
+      "doc": "",
+      "end": "Rua Primavera, 88 — Jardim Europa",
+      "ref": "Casa de esquina, muro verde",
+      "entrega": "2026-11-28",
+      "retirada": "2026-11-30",
+      "itens": [
+        {
+          "tipo": "jogo",
+          "mesa": "p-mesa-br",
+          "cad": "p-cadeira-br",
+          "qtd": 15
+        }
+      ],
+      "frete": 50,
+      "desconto": 0,
+      "sinal": 0,
+      "caucao": 0,
+      "pagamento": "Pix",
+      "status": "Orçamento"
+    },
+    {
+      "id": 1043,
+      "cliente": "Mariana Souza",
+      "tel": "(11) 98765-4321",
+      "doc": "",
+      "end": "Rua das Palmeiras, 120 — Centro",
+      "ref": "Salão do prédio, portão azul",
+      "entrega": "2026-11-21",
+      "retirada": "2026-11-23",
+      "itens": [
+        {
+          "tipo": "jogo",
+          "mesa": "p-mesa-br",
+          "cad": "p-cadeiraBraco-br",
+          "qtd": 8
+        },
+        {
+          "tipo": "cadeira",
+          "cad": "p-cadeira-br",
+          "qtd": 10
+        }
+      ],
+      "frete": 40,
+      "desconto": 0,
+      "sinal": 150,
+      "caucao": 0,
+      "pagamento": "Pix",
+      "status": "Confirmado"
+    },
+    {
+      "id": 1042,
+      "cliente": "Carlos Lima",
+      "tel": "(11) 97654-3210",
+      "doc": "",
+      "end": "Av. Brasil, 1500 — Jardim América",
+      "ref": "Chácara, entrada pelo portão lateral",
+      "entrega": "2026-11-17",
+      "retirada": "2026-11-18",
+      "itens": [
+        {
+          "tipo": "jogo",
+          "mesa": "m-mesa-pr",
+          "cad": "m-cadeira-pr",
+          "qtd": 8
+        },
+        {
+          "tipo": "jogo",
+          "mesa": "p-mesa-br",
+          "cad": "p-cadeira-br",
+          "qtd": 4
+        },
+        {
+          "tipo": "mesa",
+          "mesa": "p-mesa-br",
+          "qtd": 2
+        }
+      ],
+      "frete": 60,
+      "desconto": 20,
+      "sinal": 120,
+      "caucao": 200,
+      "pagamento": "Dinheiro",
+      "status": "Confirmado"
+    },
+    {
+      "id": 1040,
+      "cliente": "Ana Paula Ribeiro",
+      "tel": "(11) 96543-2109",
+      "doc": "",
+      "end": "Rua Sete de Setembro, 45 — Vila Nova",
+      "ref": "Fundos da casa",
+      "entrega": "2026-11-15",
+      "retirada": "2026-11-17",
+      "itens": [
+        {
+          "tipo": "jogo",
+          "mesa": "p-mesa-br",
+          "cad": "p-cadeira-br",
+          "qtd": 5
+        },
+        {
+          "tipo": "cadeira",
+          "cad": "p-cadeiraBraco-br",
+          "qtd": 6
+        }
+      ],
+      "frete": 40,
+      "desconto": 0,
+      "sinal": 80,
+      "caucao": 0,
+      "pagamento": "Pix",
+      "status": "Entregue"
+    },
+    {
+      "id": 1037,
+      "cliente": "Roberto Alves",
+      "tel": "(11) 95432-1098",
+      "doc": "",
+      "end": "Rua Ipê Amarelo, 300 — Parque das Árvores",
+      "ref": "",
+      "entrega": "2026-11-08",
+      "retirada": "2026-11-10",
+      "itens": [
+        {
+          "tipo": "jogo",
+          "mesa": "p-mesa-br",
+          "cad": "p-cadeira-br",
+          "qtd": 6
+        }
+      ],
+      "frete": 40,
+      "desconto": 0,
+      "sinal": 60,
+      "caucao": 0,
+      "pagamento": "Cartão",
+      "status": "Devolvido",
+      "dev": {
+        "q": {
+          "p-cadeira-br": 2
+        },
+        "f": {},
+        "atraso": 0
+      }
+    }
+  ],
+  "pix": {
+    "chave": "contato@suaempresa.com.br",
+    "nome": "Sua Empresa Locacoes",
+    "cidade": "Sao Paulo"
+  }
+}

@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Locação de mesas e cadeiras</title>
+<script src="./support.js"></script>
+<script src="/_blob/40eceedefe2e7495fb72c050d8329cad"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0F6B5C}a:hover{color:#0B5246}
+button{font:inherit;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:48px;padding:0 14px;border:1px solid #C5CDC9;border-radius:10px;font:inherit;font-size:16px;color:#16201E;background:#fff}
+.in:focus,.num:focus{outline:2px solid #0F6B5C;outline-offset:1px;border-color:#0F6B5C}
+.num{width:60px;box-sizing:border-box;height:44px;border:1px solid #C5CDC9;border-radius:10px;font:inherit;font-size:17px;font-weight:600;text-align:center;color:#16201E;background:#fff}
+.lb{font-size:13px;font-weight:500;color:#3D4744}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; display: flex; flex-direction: column; background: #F6F7F5; color: #16201E; font-family: Inter, system-ui, sans-serif; overflow: hidden">
+
+<!-- BARRA SUPERIOR -->
+<header style="position: relative; z-index: 6; flex-shrink: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px; background: #fff; border-bottom: 1px solid #E2E6E3">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600">Locação de festas</span>
+<sc-if value="{{top.filtrado}}" hint-placeholder-val="{{ false }}">
+<span style="height: 24px; padding: 0 10px; border-radius: 12px; background: #E3F1EE; color: #0B5A4D; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center">{{top.filtroNome}}</span>
+</sc-if>
+</div>
+<button aria-label="Mais opções" aria-haspopup="menu" aria-expanded="{{top.aberto}}" onClick="{{top.toggle}}" style="width: 44px; height: 44px; border: none; border-radius: 22px; background: transparent; color: #16201E; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+</button>
+<sc-if value="{{top.aberto}}" hint-placeholder-val="{{ false }}">
+<div role="menu" style="position: absolute; top: 52px; right: 12px; width: 220px; background: #fff; border: 1px solid #E2E6E3; border-radius: 12px; padding: 6px; box-shadow: 0 8px 24px rgba(22, 32, 30, 0.14)">
+<button role="menuitem" aria-haspopup="listbox" aria-expanded="{{top.matAberto}}" onClick="{{top.toggleMat}}" style="width: 100%; height: 48px; border: none; border-radius: 8px; background: transparent; color: #16201E; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; padding: 0 10px; text-align: left">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5-9 5-9-5 9-5z"></path><path d="M3 12l9 5 9-5"></path><path d="M3 17l9 5 9-5"></path></svg>
+<span style="flex: 1">Material</span>
+<span style="font-size: 13px; font-weight: 500; color: #5B6763">{{top.matAtual}}</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6763" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{top.chevron}}"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{top.matAberto}}" hint-placeholder-val="{{ false }}">
+<div role="listbox" aria-label="Material" style="display: flex; flex-direction: column; gap: 2px; margin: 0 0 4px 28px">
+<sc-for list="{{top.mats}}" as="mt" hint-placeholder-count="3">
+<button role="option" aria-selected="{{mt.sel}}" onClick="{{mt.pick}}" style="width: 100%; height: 44px; border: none; border-radius: 8px; color: #16201E; font-size: 14px; display: flex; align-items: center; gap: 8px; padding: 0 10px; text-align: left; {{mt.style}}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F6B5C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{mt.ck}}"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+{{mt.nome}}</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="height: 1px; background: #E2E6E3; margin: 6px 4px"></div>
+<button role="menuitem" onClick="{{top.abrirPrecos}}" style="width: 100%; height: 48px; border: none; border-radius: 8px; background: transparent; color: #16201E; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; padding: 0 10px; text-align: left">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>
+Preços</button>
+<button role="menuitem" onClick="{{top.abrirPix}}" style="width: 100%; height: 48px; border: none; border-radius: 8px; background: transparent; color: #16201E; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; padding: 0 10px; text-align: left">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>
+Config. Pix</button>
+</div>
+</sc-if>
+</header>
+<sc-if value="{{top.aberto}}" hint-placeholder-val="{{ false }}">
+<button aria-label="Fechar menu" onClick="{{top.fechar}}" style="position: absolute; inset: 0; z-index: 5; border: none; background: transparent; cursor: default"></button>
+</sc-if>
+
+<div style="flex: 1; overflow-y: auto; min-height: 0">
+
+<!-- INÍCIO -->
+<sc-if value="{{scr.inicio}}" hint-placeholder-val="{{ true }}">
+<div style="padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div>
+<p style="margin: 0; font-size: 13px; color: #5B6763">Terça-feira, 17 de novembro</p>
+<h1 style="margin: 4px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Bom dia</h1>
+</div>
+<button onClick="{{go.novo}}" style="height: 44px; padding: 0 16px; border: none; border-radius: 22px; background: #0F6B5C; color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+Novo pedido
+</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px">
+<p style="margin: 0; font-size: 12px; color: #5B6763">Mesas livres hoje</p>
+<p style="margin: 6px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 600">{{home.mesasLivres}}</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">de {{home.mesasTotal}} no estoque</p>
+</div>
+<div style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px">
+<p style="margin: 0; font-size: 12px; color: #5B6763">Cadeiras livres hoje</p>
+<p style="margin: 6px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 600">{{home.cadeirasLivres}}</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">de {{home.cadeirasTotal}} no estoque</p>
+</div>
+<div style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px">
+<p style="margin: 0; font-size: 12px; color: #5B6763">Entregas hoje</p>
+<p style="margin: 6px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 600">{{home.entregas}}</p>
+</div>
+<div style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px">
+<p style="margin: 0; font-size: 12px; color: #5B6763">Retiradas hoje</p>
+<p style="margin: 6px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 600">{{home.retiradas}}</p>
+</div>
+</div>
+
+<div style="background: #0F6B5C; color: #fff; border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center">
+<div>
+<p style="margin: 0; font-size: 12px; color: #CFE7E1">A receber dos pedidos em aberto</p>
+<p style="margin: 4px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">{{home.aReceber}}</p>
+</div>
+<button onClick="{{go.pedidos}}" style="height: 40px; padding: 0 14px; border: 1px solid #5FA597; border-radius: 20px; background: transparent; color: #fff; font-size: 13px; font-weight: 600">Ver pedidos</button>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Agenda de hoje</h2>
+<sc-for list="{{home.agenda}}" as="a" hint-placeholder-count="2">
+<div style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; {{a.chip}}">{{a.tipo}}</span>
+<span style="font-size: 12px; color: #5B6763">Pedido #{{a.id}}</span>
+</div>
+<p style="margin: 2px 0 0; font-size: 16px; font-weight: 600">{{a.cliente}}</p>
+<p style="margin: 0; font-size: 13px; color: #3D4744">{{a.end}}</p>
+<p style="margin: 0; font-size: 13px; color: #5B6763">{{a.itens}}</p>
+<div style="display: flex; gap: 8px; margin-top: 6px">
+<a href="{{a.tel}}" style="flex: 1; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; text-decoration: none; color: #16201E">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"></path></svg>
+Ligar</a>
+<button onClick="{{a.open}}" style="flex: 1; height: 44px; border: none; border-radius: 10px; background: #E3F1EE; color: #0B5A4D; font-size: 14px; font-weight: 600">Abrir pedido</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{home.semAgenda}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 14px; color: #5B6763">Nenhuma entrega ou retirada para hoje.</p>
+</sc-if>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Próximos eventos</h2>
+<sc-for list="{{home.proximos}}" as="p" hint-placeholder-count="2">
+<button onClick="{{p.open}}" style="text-align: left; background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #16201E">
+<div style="min-width: 0">
+<p style="margin: 0; font-size: 15px; font-weight: 600">{{p.cliente}}</p>
+<p style="margin: 3px 0 0; font-size: 13px; color: #5B6763">{{p.quando}} · {{p.itens}}</p>
+</div>
+<span style="flex-shrink: 0; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; {{p.chip}}">{{p.status}}</span>
+</button>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<!-- PEDIDOS -->
+<sc-if value="{{scr.pedidos}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Pedidos</h1>
+<div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px">
+<sc-for list="{{lista.filtros}}" as="fl" hint-placeholder-count="5">
+<button onClick="{{fl.pick}}" style="flex-shrink: 0; height: 36px; padding: 0 14px; border-radius: 18px; font-size: 13px; font-weight: 600; {{fl.style}}">{{fl.nome}}</button>
+</sc-for>
+</div>
+<sc-for list="{{lista.rows}}" as="r" hint-placeholder-count="4">
+<button onClick="{{r.open}}" style="text-align: left; background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; color: #16201E">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%">
+<span style="font-size: 12px; color: #5B6763">#{{r.id}} · {{r.quando}}</span>
+<span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; {{r.chip}}">{{r.status}}</span>
+</div>
+<p style="margin: 0; font-size: 16px; font-weight: 600">{{r.cliente}}</p>
+<div style="display: flex; justify-content: space-between; align-items: baseline; width: 100%; gap: 10px">
+<span style="font-size: 13px; color: #3D4744">{{r.itens}}</span>
+<span style="font-size: 15px; font-weight: 600; flex-shrink: 0">{{r.total}}</span>
+</div>
+<sc-if value="{{r.hasFlag}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 600; color: #9A3412">{{r.flag}}</span>
+</sc-if>
+</button>
+</sc-for>
+<sc-if value="{{lista.vazio}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 14px; color: #5B6763">Nenhum pedido nesse filtro.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<!-- NOVO PEDIDO -->
+<sc-if value="{{scr.novo}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 24px 20px 0; display: flex; flex-direction: column; gap: 18px">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Novo pedido</h1>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Cliente</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-cliente" class="lb">Nome</label>
+<input id="f-cliente" class="in" type="text" value="{{form.cliente}}" onChange="{{on.cliente}}" placeholder="Nome completo">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-tel" class="lb">Telefone / WhatsApp</label>
+<input id="f-tel" class="in" type="tel" value="{{form.tel}}" onChange="{{on.tel}}" placeholder="(00) 00000-0000">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-doc" class="lb">CPF ou CNPJ (para o contrato)</label>
+<input id="f-doc" class="in" type="text" value="{{form.doc}}" onChange="{{on.doc}}" placeholder="Opcional">
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Local da entrega</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-end" class="lb">Endereço</label>
+<input id="f-end" class="in" type="text" value="{{form.end}}" onChange="{{on.end}}" placeholder="Rua, número, bairro">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-ref" class="lb">Ponto de referência / observações</label>
+<input id="f-ref" class="in" type="text" value="{{form.ref}}" onChange="{{on.ref}}" placeholder="Ex.: portão lateral, 2º andar sem elevador">
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Datas</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-ent" class="lb">Entrega</label>
+<input id="f-ent" class="in" type="date" value="{{form.entrega}}" onChange="{{on.entrega}}">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-ret" class="lb">Retirada</label>
+<input id="f-ret" class="in" type="date" value="{{form.retirada}}" onChange="{{on.retirada}}">
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #3D4744; background: #F1F4F2; border-radius: 8px; padding: 10px 12px">Calculado: <strong>{{novo.diariasTxt}}</strong></p>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div>
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Itens</h2>
+<p style="margin: 4px 0 0; font-size: 13px; color: #5B6763">Escolha o tipo, o modelo (material, braço, cor) e a quantidade.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{novo.tipos}}" as="tp" hint-placeholder-count="3">
+<button onClick="{{tp.pick}}" style="height: 40px; padding: 0 14px; border-radius: 20px; font-size: 13px; font-weight: 600; {{tp.style}}">{{tp.nome}}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{novo.showMesa}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="lb">Modelo da mesa</span>
+<sc-for list="{{novo.mesaOpts}}" as="mo" hint-placeholder-count="2">
+<button onClick="{{mo.pick}}" style="text-align: left; padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; {{mo.style}}">
+<span style="display: flex; align-items: center; gap: 10px; min-width: 0">
+<span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid #A9B3AE; flex-shrink: 0; background: {{mo.swatch}}"></span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-size: 14px; font-weight: 600">{{mo.nome}}</span>
+<span style="font-size: 12px; color: #5B6763">{{mo.sub}}</span>
+</span>
+</span>
+<span style="font-size: 12px; font-weight: 600; flex-shrink: 0; {{mo.livStyle}}">{{mo.livTxt}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{novo.showCad}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="lb">{{novo.cadTitulo}}</span>
+<sc-for list="{{novo.cadOpts}}" as="co" hint-placeholder-count="3">
+<button onClick="{{co.pick}}" style="text-align: left; padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; {{co.style}}">
+<span style="display: flex; align-items: center; gap: 10px; min-width: 0">
+<span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid #A9B3AE; flex-shrink: 0; background: {{co.swatch}}"></span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-size: 14px; font-weight: 600">{{co.nome}}</span>
+<span style="font-size: 12px; color: #5B6763">{{co.sub}}</span>
+</span>
+</span>
+<span style="font-size: 12px; font-weight: 600; flex-shrink: 0; {{co.livStyle}}">{{co.livTxt}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-size: 14px; font-weight: 600">Quantidade</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">{{novo.addPreco}}</p>
+</div>
+<button aria-label="Diminuir quantidade" onClick="{{novo.addDec}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">−</button>
+<input class="num" type="number" min="1" aria-label="Quantidade" value="{{novo.addQtd}}" onChange="{{novo.addInput}}">
+<button aria-label="Aumentar quantidade" onClick="{{novo.addInc}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">+</button>
+</div>
+<button onClick="{{novo.addLinha}}" style="height: 48px; border: 1px solid #0F6B5C; border-radius: 12px; background: #E3F1EE; color: #0B5A4D; font-size: 14px; font-weight: 600">Adicionar ao pedido</button>
+
+<sc-if value="{{novo.temLinhas}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; border-top: 1px solid #EEF1EF">
+<sc-for list="{{novo.linhas}}" as="ln" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #EEF1EF">
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-size: 14px; font-weight: 600">{{ln.titulo}}</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">{{ln.desc}}</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #3D4744">{{ln.valor}}</p>
+</div>
+<button aria-label="{{ln.removerLabel}}" onClick="{{ln.remover}}" style="width: 44px; height: 44px; border: 1px solid #E2E6E3; border-radius: 10px; background: #fff; color: #9A3412; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>
+</button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{novo.temLinhas}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; {{novo.dispStyle}}">
+<p style="margin: 0; font-size: 13px; font-weight: 600">{{novo.dispTitulo}}</p>
+<sc-for list="{{novo.dispRows}}" as="dp" hint-placeholder-count="2">
+<div style="display: flex; justify-content: space-between; gap: 10px; font-size: 12px">
+<span>{{dp.nome}}</span>
+<span style="font-weight: 600; flex-shrink: 0">{{dp.txt}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Valores e pagamento</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-frete" class="lb">Frete (R$)</label>
+<input id="f-frete" class="in" type="number" min="0" step="0.01" value="{{form.frete}}" onChange="{{on.frete}}">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-desc" class="lb">Desconto (R$)</label>
+<input id="f-desc" class="in" type="number" min="0" step="0.01" value="{{form.desconto}}" onChange="{{on.desconto}}">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-sinal" class="lb">Sinal pago (R$)</label>
+<input id="f-sinal" class="in" type="number" min="0" step="0.01" value="{{form.sinal}}" onChange="{{on.sinal}}">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-cau" class="lb">Caução (R$)</label>
+<input id="f-cau" class="in" type="number" min="0" step="0.01" value="{{form.caucao}}" onChange="{{on.caucao}}">
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="lb">Forma de pagamento</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{novo.pagOpts}}" as="po" hint-placeholder-count="4">
+<button onClick="{{po.pick}}" style="height: 40px; padding: 0 14px; border-radius: 20px; font-size: 13px; font-weight: 600; {{po.style}}">{{po.nome}}</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="position: sticky; bottom: 0; margin: 0 -20px; background: #fff; border-top: 1px solid #E2E6E3; padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 -6px 16px rgba(22, 32, 30, 0.06)">
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Aluguel ({{novo.diariasTxt}} × {{novo.diaria}})</span><span>{{novo.aluguel}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Frete</span><span>{{novo.frete}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Desconto</span><span>{{novo.desconto}}</span></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 6px; border-top: 1px dashed #D5DBD8">
+<span style="font-size: 14px; font-weight: 600">Total</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">{{novo.total}}</span>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Saldo a cobrar na entrega (total − sinal)</span><span style="font-weight: 600">{{novo.saldo}}</span></div>
+<sc-if value="{{msg.erro}}" hint-placeholder-val="{{ false }}">
+<p role="alert" style="margin: 0; font-size: 13px; font-weight: 600; color: #9A3412; background: #FDEDE3; border-radius: 8px; padding: 8px 10px">{{msg.txt}}</p>
+</sc-if>
+<div style="display: flex; gap: 8px">
+<button onClick="{{novo.salvarOrcamento}}" style="flex: 1; height: 48px; border: 1px solid #0F6B5C; border-radius: 12px; background: #fff; color: #0F6B5C; font-size: 14px; font-weight: 600">Salvar orçamento</button>
+<button onClick="{{novo.salvarPedido}}" style="flex: 1.3; height: 48px; border: none; border-radius: 12px; background: #0F6B5C; color: #fff; font-size: 14px; font-weight: 600">Confirmar pedido</button>
+</div>
+</section>
+</div>
+</sc-if>
+
+<!-- DETALHE / DEVOLUÇÃO -->
+<sc-if value="{{scr.detalhe}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<button onClick="{{go.pedidos}}" style="align-self: flex-start; height: 40px; padding: 0 12px 0 6px; border: none; background: transparent; color: #0F6B5C; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+Pedidos</button>
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+<div>
+<p style="margin: 0; font-size: 13px; color: #5B6763">Pedido #{{det.id}}</p>
+<h1 style="margin: 4px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">{{det.cliente}}</h1>
+</div>
+<span style="flex-shrink: 0; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; {{det.chip}}">{{det.status}}</span>
+</div>
+
+<sc-if value="{{msg.ok}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; font-size: 13px; font-weight: 600; color: #0B5A4D; background: #E3F1EE; border-radius: 8px; padding: 10px 12px">{{msg.txt}}</p>
+</sc-if>
+<sc-if value="{{msg.erro}}" hint-placeholder-val="{{ false }}">
+<p role="alert" style="margin: 0; font-size: 13px; font-weight: 600; color: #9A3412; background: #FDEDE3; border-radius: 8px; padding: 10px 12px">{{msg.txt}}</p>
+</sc-if>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; gap: 10px; align-items: flex-start">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6763" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+<div>
+<p style="margin: 0; font-size: 14px">{{det.end}}</p>
+<p style="margin: 2px 0 0; font-size: 13px; color: #5B6763">{{det.ref}}</p>
+</div>
+</div>
+<div style="display: flex; gap: 10px; align-items: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6763" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 11h18"></path></svg>
+<p style="margin: 0; font-size: 14px">{{det.periodo}}</p>
+</div>
+<div style="display: flex; gap: 10px; align-items: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6763" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"></path></svg>
+<a href="{{det.telHref}}" style="font-size: 14px; font-weight: 600">{{det.tel}}</a>
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 0 2px; font-size: 15px; font-weight: 600">Itens e valores</h2>
+<sc-for list="{{det.linhas}}" as="dl" hint-placeholder-count="2">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #EEF1EF">
+<div style="min-width: 0">
+<p style="margin: 0; font-size: 14px; font-weight: 600">{{dl.titulo}}</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">{{dl.desc}}</p>
+</div>
+<span style="font-size: 13px; color: #3D4744; flex-shrink: 0">{{dl.valor}}</span>
+</div>
+</sc-for>
+<p style="margin: 0 0 6px; font-size: 13px; color: #5B6763">Sai do estoque: {{det.mesasTot}} mesas e {{det.cadTot}} cadeiras</p>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Aluguel ({{det.diariasTxt}})</span><span>{{det.aluguel}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Frete</span><span>{{det.frete}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Desconto</span><span>{{det.desconto}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; padding-top: 6px; border-top: 1px dashed #D5DBD8"><span>Total do aluguel</span><span>{{det.total}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Sinal pago ({{det.pagamento}})</span><span>{{det.sinal}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Caução recebida</span><span>{{det.caucao}}</span></div>
+</section>
+
+<sc-if value="{{det.showVistoria}}" hint-placeholder-val="{{ false }}">
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px 16px 4px; display: flex; flex-direction: column">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Vistoria na retirada</h2>
+<p style="margin: 4px 0 6px; font-size: 13px; color: #5B6763">Conte por modelo o que voltou. Quebradas e faltando saem do estoque; ajuste a quantidade quando repor.</p>
+<sc-for list="{{det.devGrupos}}" as="g" hint-placeholder-count="2">
+<div style="border-top: 1px solid #EEF1EF; padding-top: 12px; margin-top: 4px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #A9B3AE; flex-shrink: 0; background: {{g.swatch}}"></span>
+<p style="margin: 0; font-size: 14px; font-weight: 600">{{g.nome}}</p>
+</div>
+<p style="margin: 2px 0 0 22px; font-size: 12px; color: #5B6763">{{g.sub}}</p>
+<sc-for list="{{g.rows}}" as="dr" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 0">
+<p style="flex: 1; margin: 0; font-size: 14px; color: #3D4744">{{dr.label}}</p>
+<sc-if value="{{dr.editable}}" hint-placeholder-val="{{ true }}">
+<button aria-label="{{dr.decLabel}}" onClick="{{dr.dec}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">−</button>
+</sc-if>
+<span style="width: 36px; text-align: center; font-weight: 600; font-size: 17px">{{dr.value}}</span>
+<sc-if value="{{dr.editable}}" hint-placeholder-val="{{ true }}">
+<button aria-label="{{dr.incLabel}}" onClick="{{dr.inc}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">+</button>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid #EEF1EF; margin-top: 4px">
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-weight: 600; font-size: 14px">Dias de atraso</p>
+<p style="margin: 2px 0 0; font-size: 12px; color: #5B6763">{{det.atrasoSub}}</p>
+</div>
+<sc-if value="{{det.editable}}" hint-placeholder-val="{{ true }}">
+<button aria-label="Diminuir dias de atraso" onClick="{{det.atrasoDec}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">−</button>
+</sc-if>
+<span style="width: 36px; text-align: center; font-weight: 600; font-size: 17px">{{det.atrasoDias}}</span>
+<sc-if value="{{det.editable}}" hint-placeholder-val="{{ true }}">
+<button aria-label="Aumentar dias de atraso" onClick="{{det.atrasoInc}}" style="width: 44px; height: 44px; border: 1px solid #C5CDC9; border-radius: 10px; background: #fff; font-size: 20px; color: #16201E">+</button>
+</sc-if>
+</div>
+</section>
+
+<section style="background: #fff; border: 2px solid #0F6B5C; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 0 2px; font-size: 15px; font-weight: 600">Total refeito</h2>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>Total do aluguel</span><span>{{det.total}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>+ Avarias e faltas</span><span>{{det.avarias}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>+ Atraso na devolução</span><span>{{det.atraso}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>Novo total</span><span>{{det.final}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4744"><span>− Sinal e caução já recebidos</span><span>{{det.abatido}}</span></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; border-top: 1px dashed #D5DBD8">
+<span style="font-size: 14px; font-weight: 600">{{det.restoLabel}}</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600; {{det.restoStyle}}">{{det.resto}}</span>
+</div>
+</section>
+</sc-if>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div>
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Google Agenda</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: #5B6763">Cria o evento já preenchido com cliente, endereço, itens e telefone.</p>
+</div>
+<div style="display: flex; gap: 8px">
+<a href="{{det.gcalEntrega}}" target="_blank" rel="noopener" style="flex: 1; height: 48px; border: 1px solid #C5CDC9; border-radius: 12px; color: #16201E; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 11h18M12 14v4M10 16h4"></path></svg>
+Entrega {{det.entregaDm}}</a>
+<a href="{{det.gcalRetirada}}" target="_blank" rel="noopener" style="flex: 1; height: 48px; border: 1px solid #C5CDC9; border-radius: 12px; color: #16201E; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 11h18M12 14v4M10 16h4"></path></svg>
+Retirada {{det.retiradaDm}}</a>
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F6B5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>
+<div>
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Cobrar com Pix</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: #5B6763">QR Code e copia e cola para enviar ao cliente.</p>
+</div>
+</div>
+<sc-if value="{{det.pixSemChave}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 13px; font-weight: 600; color: #9A3412; background: #FDEDE3; border-radius: 8px; padding: 10px 12px">Cadastre sua chave Pix no menu ⋮ → Config. Pix para gerar a cobrança.</p>
+</sc-if>
+<sc-if value="{{det.pixTemChave}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{det.pixOpts}}" as="px" hint-placeholder-count="3">
+<button onClick="{{px.pick}}" style="height: 40px; padding: 0 12px; border-radius: 20px; font-size: 13px; font-weight: 600; {{px.style}}">{{px.nome}}</button>
+</sc-for>
+</div>
+<sc-if value="{{det.pixIsOutro}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="pix-outro" class="lb">Valor a cobrar (R$)</label>
+<input id="pix-outro" class="in" type="number" min="0" step="0.01" value="{{det.pixOutroVal}}" onChange="{{det.onPixOutro}}">
+</div>
+</sc-if>
+<sc-if value="{{det.pixTemValor}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; border: 1px solid #E2E6E3; border-radius: 12px; background: #FBFCFB">
+<p style="margin: 0; font-size: 13px; color: #5B6763">{{det.pixDescricao}}</p>
+<p style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">{{det.pixValor}}</p>
+<sc-if value="{{det.pixTemQr}}" hint-placeholder-val="{{ true }}">
+<svg role="img" aria-label="QR Code do Pix" width="208" height="208" viewBox="{{det.pixVb}}" shape-rendering="crispEdges" style="background: #fff; border-radius: 8px"><path d="{{det.pixPath}}" fill="#111111"></path></svg>
+</sc-if>
+<sc-if value="{{det.pixSemQr}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 13px; color: #5B6763">QR Code indisponível aqui; use o copia e cola.</p>
+</sc-if>
+<p style="margin: 0; font-size: 12px; color: #5B6763; text-align: center">{{det.pixRecebedor}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span class="lb">Pix copia e cola</span>
+<p style="margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.5; color: #3D4744; background: #F1F4F2; border-radius: 8px; padding: 10px 12px; word-break: break-all">{{det.pixCode}}</p>
+</div>
+<div style="display: flex; gap: 8px">
+<button onClick="{{det.pixCopiar}}" style="flex: 1; height: 48px; border: 1px solid #0F6B5C; border-radius: 12px; background: #fff; color: #0F6B5C; font-size: 14px; font-weight: 600">{{det.pixCopiarLabel}}</button>
+<a href="{{det.pixWa}}" target="_blank" rel="noopener" style="flex: 1.3; height: 48px; border-radius: 12px; background: #0F6B5C; color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"></path></svg>
+Enviar no WhatsApp</a>
+</div>
+</sc-if>
+<sc-if value="{{det.pixZero}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 13px; color: #5B6763">Não há valor a cobrar nessa opção.</p>
+</sc-if>
+</sc-if>
+</section>
+
+<sc-if value="{{det.temAcao}}" hint-placeholder-val="{{ true }}">
+<button onClick="{{det.acao}}" style="height: 52px; border: none; border-radius: 12px; background: #0F6B5C; color: #fff; font-size: 15px; font-weight: 600">{{det.acaoLabel}}</button>
+</sc-if>
+</div>
+</sc-if>
+
+<!-- AGENDA -->
+<sc-if value="{{scr.agenda}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Agenda</h1>
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button aria-label="Mês anterior" onClick="{{cal.prev}}" style="width: 44px; height: 44px; border: none; border-radius: 10px; background: transparent; color: #16201E; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+</button>
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">{{cal.titulo}}</h2>
+<button aria-label="Próximo mês" onClick="{{cal.next}}" style="width: 44px; height: 44px; border: none; border-radius: 10px; background: transparent; color: #16201E; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px">
+<sc-for list="{{cal.semana}}" as="wd" hint-placeholder-count="7">
+<span style="text-align: center; font-size: 11px; font-weight: 600; color: #5B6763; padding: 4px 0">{{wd}}</span>
+</sc-for>
+<sc-for list="{{cal.celulas}}" as="cl" hint-placeholder-count="35">
+<sc-if value="{{cl.vazio}}" hint-placeholder-val="{{ false }}">
+<span aria-hidden="true" style="height: 48px"></span>
+</sc-if>
+<sc-if value="{{cl.temDia}}" hint-placeholder-val="{{ true }}">
+<button aria-label="{{cl.aria}}" onClick="{{cl.pick}}" style="height: 48px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 14px; padding: 0; {{cl.style}}">
+{{cl.dia}}
+<span style="display: flex; gap: 3px; height: 6px">
+<sc-if value="{{cl.temEnt}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: #1D4ED8"></span></sc-if>
+<sc-if value="{{cl.temRet}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: #C2410C"></span></sc-if>
+</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+<div style="display: flex; gap: 16px; justify-content: center; font-size: 12px; color: #3D4744; padding-top: 4px">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1D4ED8"></span>Entrega</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #C2410C"></span>Retirada</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<div>
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">{{cal.diaTitulo}}</h2>
+<p style="margin: 3px 0 0; font-size: 13px; color: #5B6763">{{cal.ocupacao}}</p>
+</div>
+<sc-for list="{{cal.eventos}}" as="ev" hint-placeholder-count="2">
+<button onClick="{{ev.open}}" style="text-align: left; background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; color: #16201E">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%">
+<span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; {{ev.chip}}">{{ev.tipo}}</span>
+<span style="font-size: 12px; color: #5B6763">#{{ev.id}} · {{ev.status}}</span>
+</div>
+<p style="margin: 0; font-size: 16px; font-weight: 600">{{ev.cliente}}</p>
+<p style="margin: 0; font-size: 13px; color: #3D4744">{{ev.end}}</p>
+<p style="margin: 0; font-size: 13px; color: #5B6763">{{ev.itens}}</p>
+</button>
+</sc-for>
+<sc-if value="{{cal.semEventos}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 14px; color: #5B6763">Nenhuma entrega ou retirada nesse dia.</p>
+</sc-if>
+</section>
+</div>
+</sc-if>
+
+<!-- ESTOQUE -->
+<sc-if value="{{scr.estoque}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Estoque</h1>
+<sc-if value="{{est.mostraAbas}}" hint-placeholder-val="{{ true }}">
+<div role="tablist" aria-label="Material" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #E6EAE8; border-radius: 12px">
+<sc-for list="{{est.abas}}" as="ab" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{ab.sel}}" onClick="{{ab.pick}}" style="height: 44px; border: none; border-radius: 9px; font-size: 14px; {{ab.style}}">{{ab.nome}}</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="display: grid; gap: 8px; {{est.gridCols}}">
+<sc-for list="{{est.jogosPor}}" as="jg" hint-placeholder-count="2">
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; gap: 10px">
+<div>
+<p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600">
+<span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #A9B3AE; flex-shrink: 0; background: {{jg.swatch}}"></span>
+{{jg.cor}}</p>
+<p style="margin: 4px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">{{jg.n}}</p>
+<p style="margin: 0; font-size: 10px; color: #5B6763; white-space: nowrap">jogos completos</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="{{jg.inputId}}" style="font-size: 10px; color: #3D4744; white-space: nowrap">Cadeiras por mesa</label>
+<input id="{{jg.inputId}}" class="in" type="number" min="1" value="{{jg.valor}}" onChange="{{jg.onChange}}" style="height: 44px; padding: 0 8px; width: 100%; box-sizing: border-box">
+</div>
+</section>
+</sc-for>
+</div>
+<sc-for list="{{est.itens}}" as="it" hint-placeholder-count="3">
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">{{it.label}}</h2>
+<span style="font-size: 13px; color: #5B6763; text-align: right">{{it.totalTxt}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{it.cores}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="{{c.inputId}}" style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #3D4744">
+<span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #A9B3AE; flex-shrink: 0; background: {{c.swatch}}"></span>
+{{c.nome}}</label>
+<input id="{{c.inputId}}" class="in" type="number" min="0" value="{{c.total}}" onChange="{{c.onTotal}}" style="height: 48px; padding: 0 10px">
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</sc-if>
+
+<!-- PREÇOS -->
+<sc-if value="{{scr.precos}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<button onClick="{{prc.voltar}}" style="align-self: flex-start; height: 40px; padding: 0 12px 0 6px; border: none; background: transparent; color: #0F6B5C; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+Voltar</button>
+<div>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Preços</h1>
+<p style="margin: 4px 0 0; font-size: 13px; color: #5B6763">Diária por peça e valor de reposição se quebrar ou não voltar. O preço vale para todas as cores. Os valores são de exemplo.</p>
+</div>
+<sc-for list="{{prc.materiais}}" as="mt" hint-placeholder-count="2">
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">{{mt.titulo}}</h2>
+<sc-for list="{{mt.itens}}" as="it" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0; font-size: 15px; font-weight: 600">{{it.label}}</h3>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="{{it.idPreco}}" style="font-size: 12px; color: #3D4744">Diária por peça (R$)</label>
+<input id="{{it.idPreco}}" class="in" type="number" min="0" step="0.01" value="{{it.preco}}" onChange="{{it.onPreco}}" style="height: 44px; padding: 0 10px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="{{it.idRep}}" style="font-size: 12px; color: #3D4744">Reposição (R$)</label>
+<input id="{{it.idRep}}" class="in" type="number" min="0" step="0.01" value="{{it.rep}}" onChange="{{it.onRep}}" style="height: 44px; padding: 0 10px">
+</div>
+</div>
+</div>
+</sc-for>
+</section>
+</sc-for>
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div>
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Regras gerais</h2>
+<p style="margin: 4px 0 0; font-size: 13px; color: #5B6763">Jogo = 1 mesa + cadeiras (quantidade por mesa definida no Estoque, por material e cor), menos o desconto abaixo.</p>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<label for="p-dj" style="font-size: 14px; flex: 1">Desconto por jogo (R$/dia)</label>
+<input id="p-dj" class="in" type="number" min="0" step="0.01" value="{{prc.descJogo}}" onChange="{{prc.onDescJogo}}" style="width: 110px; text-align: right">
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<label for="p-fr" style="font-size: 14px; flex: 1">Frete padrão (R$)</label>
+<input id="p-fr" class="in" type="number" min="0" step="0.01" value="{{prc.frete}}" onChange="{{prc.onFrete}}" style="width: 110px; text-align: right">
+</div>
+</section>
+</div>
+</sc-if>
+
+<!-- CONFIG. PIX -->
+<sc-if value="{{scr.pix}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+<button onClick="{{pixcfg.voltar}}" style="align-self: flex-start; height: 40px; padding: 0 12px 0 6px; border: none; background: transparent; color: #0F6B5C; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+Voltar</button>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Config. Pix</h1>
+<section style="background: #fff; border: 1px solid #E2E6E3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<p style="margin: 0; font-size: 13px; color: #5B6763">Usado para gerar o QR Code e o copia e cola dos pedidos. Os dados abaixo são de exemplo.</p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="pix-chave" class="lb">Chave Pix</label>
+<input id="pix-chave" class="in" type="text" value="{{pixcfg.chave}}" onChange="{{pixcfg.onChave}}" placeholder="CPF, CNPJ, e-mail, +55 celular ou aleatória">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="pix-nome" class="lb">Nome do recebedor (até 25 letras)</label>
+<input id="pix-nome" class="in" type="text" value="{{pixcfg.nome}}" onChange="{{pixcfg.onNome}}" placeholder="Como aparece no banco">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="pix-cidade" class="lb">Cidade</label>
+<input id="pix-cidade" class="in" type="text" value="{{pixcfg.cidade}}" onChange="{{pixcfg.onCidade}}" placeholder="Sua cidade">
+</div>
+</section>
+<p style="margin: 0; font-size: 13px; color: #3D4744; background: #F1F4F2; border-radius: 8px; padding: 10px 12px">As alterações valem na hora para todos os QR Codes gerados nos pedidos.</p>
+</div>
+</sc-if>
+
+</div>
+
+<!-- BARRA DE ABAS -->
+<nav aria-label="Navegação principal" style="flex-shrink: 0; height: 74px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #fff; border-top: 1px solid #E2E6E3; padding-bottom: 6px">
+<button onClick="{{go.inicio}}" style="border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; {{ts.inicio}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+Início</button>
+<button onClick="{{go.pedidos}}" style="border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; {{ts.pedidos}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg>
+Pedidos</button>
+<button onClick="{{go.novo}}" style="border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; {{ts.novo}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>
+Novo</button>
+<button onClick="{{go.agenda}}" style="border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; {{ts.agenda}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 11h18"></path></svg>
+Agenda</button>
+<button onClick="{{go.estoque}}" style="border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; {{ts.estoque}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+Estoque</button>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.HOJE = '2026-11-17';
+    this.STATUS = {
+      'Orçamento': 'background:#F3EEFB;color:#5B3C99',
+      'Confirmado': 'background:#E7EEFD;color:#1E40AF',
+      'Entregue': 'background:#FDEDE3;color:#9A3412',
+      'Devolvido': 'background:#EEF0EF;color:#47514E'
+    };
+    this.CORES = { 'Preta': '#1C1C1C', 'Branca': '#FFFFFF', 'Vermelha': '#B42318' };
+    this.MATERIAIS = ['Plástico', 'Metal'];
+    this.ITENS = [
+      { k: 'mesa', tipo: 'mesa', braco: false, label: 'Mesas', mats: ['Plástico', 'Metal'] },
+      { k: 'cadeira', tipo: 'cadeira', braco: false, label: 'Cadeiras', mats: ['Plástico', 'Metal'] },
+      { k: 'cadeiraBraco', tipo: 'cadeira', braco: true, label: 'Cadeiras com braço', mats: ['Plástico'] }
+    ];
+    this.COR_LIST = [{ k: 'pr', nome: 'Preta' }, { k: 'br', nome: 'Branca' }, { k: 'vm', nome: 'Vermelha' }];
+    this.state = {
+      tab: 'inicio', selId: null, filtro: 'Todos', msg: null,
+      precos: { descJogo: 2, frete: 40, cadPorJogo: {} },
+      tabela: {
+        'p-mesa': { preco: 8, rep: 120 }, 'p-cadeira': { preco: 3, rep: 45 }, 'p-cadeiraBraco': { preco: 4, rep: 60 },
+        'm-mesa': { preco: 12, rep: 180 }, 'm-cadeira': { preco: 5, rep: 80 }
+      },
+      modelos: this.catalogo(),
+      pedidos: [
+        { id: 1044, cliente: 'Juliana Martins', tel: '(11) 91234-5678', doc: '', end: 'Rua Primavera, 88 — Jardim Europa', ref: 'Casa de esquina, muro verde', entrega: '2026-11-28', retirada: '2026-11-30', itens: [{ tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeira-br', qtd: 15 }], frete: 50, desconto: 0, sinal: 0, caucao: 0, pagamento: 'Pix', status: 'Orçamento' },
+        { id: 1043, cliente: 'Mariana Souza', tel: '(11) 98765-4321', doc: '', end: 'Rua das Palmeiras, 120 — Centro', ref: 'Salão do prédio, portão azul', entrega: '2026-11-21', retirada: '2026-11-23', itens: [{ tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeiraBraco-br', qtd: 8 }, { tipo: 'cadeira', cad: 'p-cadeira-br', qtd: 10 }], frete: 40, desconto: 0, sinal: 150, caucao: 0, pagamento: 'Pix', status: 'Confirmado' },
+        { id: 1042, cliente: 'Carlos Lima', tel: '(11) 97654-3210', doc: '', end: 'Av. Brasil, 1500 — Jardim América', ref: 'Chácara, entrada pelo portão lateral', entrega: '2026-11-17', retirada: '2026-11-18', itens: [{ tipo: 'jogo', mesa: 'm-mesa-pr', cad: 'm-cadeira-pr', qtd: 8 }, { tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeira-br', qtd: 4 }, { tipo: 'mesa', mesa: 'p-mesa-br', qtd: 2 }], frete: 60, desconto: 20, sinal: 120, caucao: 200, pagamento: 'Dinheiro', status: 'Confirmado' },
+        { id: 1040, cliente: 'Ana Paula Ribeiro', tel: '(11) 96543-2109', doc: '', end: 'Rua Sete de Setembro, 45 — Vila Nova', ref: 'Fundos da casa', entrega: '2026-11-15', retirada: '2026-11-17', itens: [{ tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeira-br', qtd: 5 }, { tipo: 'cadeira', cad: 'p-cadeiraBraco-br', qtd: 6 }], frete: 40, desconto: 0, sinal: 80, caucao: 0, pagamento: 'Pix', status: 'Entregue' },
+        { id: 1037, cliente: 'Roberto Alves', tel: '(11) 95432-1098', doc: '', end: 'Rua Ipê Amarelo, 300 — Parque das Árvores', ref: '', entrega: '2026-11-08', retirada: '2026-11-10', itens: [{ tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeira-br', qtd: 6 }], frete: 40, desconto: 0, sinal: 60, caucao: 0, pagamento: 'Cartão', status: 'Devolvido', dev: { q: { 'p-cadeira-br': 2 }, f: {}, atraso: 0 } }
+      ],
+      form: this.blank(40),
+      add: { tipo: 'jogo', mesa: 'p-mesa-br', cad: 'p-cadeira-br', qtd: 1 },
+      dev: { q: {}, f: {}, atraso: 0 },
+      pix: { chave: 'contato@suaempresa.com.br', nome: 'Sua Empresa Locacoes', cidade: 'Sao Paulo' },
+      pixOpt: 'saldo', pixOutro: 0, pixCopiado: false,
+      calMes: '2026-11', calDia: '2026-11-17',
+      estMat: 'Plástico', filtroMat: 'Todos', vazio: {}
+    };
+  }
+
+  // ---------- Pix (BR Code estático, padrão do Banco Central) ----------
+  emv(id, v) { v = String(v); return id + String(v.length).padStart(2, '0') + v; }
+  crc16(str) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) { crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1); crc &= 0xFFFF; }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+  semAcento(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  pixPayload(valor, txid) {
+    const cfg = this.state.pix;
+    const nome = this.semAcento(cfg.nome).replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().trim().slice(0, 25) || 'RECEBEDOR';
+    const cidade = this.semAcento(cfg.cidade).replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().trim().slice(0, 15) || 'CIDADE';
+    const tx = String(txid || '***').replace(/[^A-Za-z0-9]/g, '').slice(0, 25) || '***';
+    let p = this.emv('00', '01') + this.emv('26', this.emv('00', 'br.gov.bcb.pix') + this.emv('01', String(cfg.chave).trim()))
+      + this.emv('52', '0000') + this.emv('53', '986');
+    if (valor > 0) p += this.emv('54', valor.toFixed(2));
+    p += this.emv('58', 'BR') + this.emv('59', nome) + this.emv('60', cidade) + this.emv('62', this.emv('05', tx)) + '6304';
+    return { code: p + this.crc16(p), nome: nome, cidade: cidade };
+  }
+  qr(text) {
+    try {
+      const lib = typeof window !== 'undefined' ? window.qrcode : null;
+      if (!lib) return null;
+      const q = lib(0, 'M'); q.addData(text); q.make();
+      const n = q.getModuleCount(); let d = '';
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += 'M' + c + ' ' + r + 'h1v1h-1z';
+      return { n: n, d: d };
+    } catch (e) { return null; }
+  }
+
+  // ---------- Google Agenda (link de criação de evento) ----------
+  gcal(o, tipo) {
+    const dia = tipo === 'entrega' ? o.entrega : o.retirada;
+    const prox = new Date(dia + 'T12:00:00'); prox.setDate(prox.getDate() + 1);
+    const ymd = (x) => x.replace(/-/g, '');
+    const fim = prox.getFullYear() + String(prox.getMonth() + 1).padStart(2, '0') + String(prox.getDate()).padStart(2, '0');
+    const c = this.calc(o);
+    const linhas = (o.itens || []).map((l) => { const i = this.linhaInfo(l); return '• ' + i.titulo + ': ' + i.desc; }).join('\n');
+    const titulo = (tipo === 'entrega' ? 'Entrega' : 'Retirada') + ' — ' + o.cliente + ' (#' + o.id + ')';
+    const det = linhas + '\n\nTotal: ' + c.mesasTot + ' mesas e ' + c.cadTot + ' cadeiras\nTelefone: ' + o.tel
+      + (o.ref ? '\nReferência: ' + o.ref : '') + '\nSaldo a receber: ' + this.brl(c.saldo);
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + encodeURIComponent(titulo)
+      + '&dates=' + ymd(dia) + '/' + fim
+      + '&details=' + encodeURIComponent(det)
+      + '&location=' + encodeURIComponent(o.end);
+  }
+
+  blank(frete) {
+    return { cliente: '', tel: '', doc: '', end: '', ref: '', entrega: '2026-11-21', retirada: '2026-11-22', itens: [], frete: frete, desconto: 0, sinal: 0, caucao: 0, pagamento: 'Pix' };
+  }
+  brl(n) { return (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  dm(iso) { if (!iso) return '--/--'; const p = iso.split('-'); return p[2] + '/' + p[1]; }
+  catalogo() {
+    // quantidades de exemplo, na ordem Preta, Branca, Vermelha
+    const q = { 'p-mesa': [10, 40, 8], 'p-cadeira': [40, 160, 30], 'p-cadeiraBraco': [20, 40, 10], 'm-mesa': [20, 10, 6], 'm-cadeira': [80, 40, 20] };
+    const quebradas = {};
+    const out = [];
+    this.MATERIAIS.forEach((mat) => {
+      this.ITENS.filter((it) => it.mats.indexOf(mat) >= 0).forEach((it) => {
+        this.COR_LIST.forEach((c, i) => {
+          const key = (mat === 'Plástico' ? 'p' : 'm') + '-' + it.k;
+          out.push({ id: key + '-' + c.k, tipo: it.tipo, material: mat, braco: it.braco, cor: c.nome, total: q[key][i], manut: quebradas[key + '-' + c.k] || 0 });
+        });
+      });
+    });
+    return out;
+  }
+  itemKey(m) { return (m.material === 'Plástico' ? 'p' : 'm') + '-' + (m.tipo === 'mesa' ? 'mesa' : (m.braco ? 'cadeiraBraco' : 'cadeira')); }
+  mod(id) {
+    const m = this.state.modelos.find((x) => x.id === id);
+    if (!m) return { id: id, tipo: 'cadeira', material: '?', braco: false, cor: '?', total: 0, manut: 0, preco: 0, rep: 0 };
+    const t = this.state.tabela[this.itemKey(m)] || { preco: 0, rep: 0 };
+    return Object.assign({}, m, { preco: t.preco, rep: t.rep });
+  }
+  nome(m) {
+    const cor = String(m.cor || '').toLowerCase();
+    if (m.tipo === 'mesa') return 'Mesa de ' + m.material.toLowerCase() + ' ' + cor;
+    return 'Cadeira de ' + m.material.toLowerCase() + (m.braco ? ' com braço ' : ' ') + cor;
+  }
+  swatch(m) { return this.CORES[m.cor] || '#E5E7E6'; }
+  // Campos numéricos: ao apagar, o campo fica vazio enquanto a pessoa digita (o mínimo só vale para o cálculo).
+  vv(key, valor) { return (this.state.vazio && this.state.vazio[key]) ? '' : valor; }
+  chg(key, min, inteiro, commit) {
+    return (ev) => {
+      const raw = ev.target.value, n = Number(raw);
+      const vazio = raw === '' || !isFinite(n);
+      const v = vazio ? min : Math.max(min, inteiro ? Math.floor(n) : n);
+      this.setState((st) => ({ vazio: Object.assign({}, st.vazio, { [key]: vazio }) }));
+      commit(v);
+    };
+  }
+  cpjKey(mat, cor) { return mat + '|' + cor; }
+  cpj(mesaId) { const m = this.mod(mesaId); return this.state.precos.cadPorJogo[this.cpjKey(m.material, m.cor)] || 4; }
+  precoJogo(mesaId, cadId) { return Math.max(0, this.mod(mesaId).preco + this.cpj(mesaId) * this.mod(cadId).preco - this.state.precos.descJogo); }
+  linhaDiaria(l) {
+    if (l.tipo === 'jogo') return l.qtd * this.precoJogo(l.mesa, l.cad);
+    if (l.tipo === 'mesa') return l.qtd * this.mod(l.mesa).preco;
+    return l.qtd * this.mod(l.cad).preco;
+  }
+  linhaInfo(l) {
+    if (l.tipo === 'jogo') return { titulo: l.qtd + (l.qtd === 1 ? ' jogo' : ' jogos'), desc: this.nome(this.mod(l.mesa)) + ' + ' + this.cpj(l.mesa) + ' × ' + this.nome(this.mod(l.cad)).toLowerCase() };
+    if (l.tipo === 'mesa') return { titulo: l.qtd + (l.qtd === 1 ? ' mesa avulsa' : ' mesas avulsas'), desc: this.nome(this.mod(l.mesa)) };
+    return { titulo: l.qtd + (l.qtd === 1 ? ' cadeira avulsa' : ' cadeiras avulsas'), desc: this.nome(this.mod(l.cad)) };
+  }
+  uso(o) {
+    const u = {};
+    const add = (id, n) => { u[id] = (u[id] || 0) + n; };
+    (o.itens || []).forEach((l) => {
+      if (l.tipo === 'jogo') { add(l.mesa, l.qtd); add(l.cad, l.qtd * this.cpj(l.mesa)); }
+      else if (l.tipo === 'mesa') add(l.mesa, l.qtd);
+      else add(l.cad, l.qtd);
+    });
+    return u;
+  }
+  dias(o) {
+    const a = Date.parse(o.entrega + 'T12:00:00'), b = Date.parse(o.retirada + 'T12:00:00');
+    if (!a || !b || b < a) return 1;
+    return Math.max(1, Math.round((b - a) / 86400000));
+  }
+  calc(o) {
+    const d = this.dias(o);
+    let diaria = 0;
+    (o.itens || []).forEach((l) => { diaria += this.linhaDiaria(l); });
+    const aluguel = diaria * d;
+    const total = Math.max(0, aluguel + (Number(o.frete) || 0) - (Number(o.desconto) || 0));
+    const u = this.uso(o);
+    let mesasTot = 0, cadTot = 0;
+    Object.keys(u).forEach((id) => { if (this.mod(id).tipo === 'mesa') mesasTot += u[id]; else cadTot += u[id]; });
+    return { d, diaria, aluguel, total, saldo: total - (Number(o.sinal) || 0), mesasTot, cadTot, uso: u };
+  }
+  contagem(c) { return c.mesasTot + ' mesas · ' + c.cadTot + ' cadeiras'; }
+  reservado(e, r, exId) {
+    const res = {};
+    this.state.pedidos.forEach((o) => {
+      if (o.id === exId || o.status === 'Devolvido' || o.status === 'Orçamento') return;
+      if (o.entrega <= r && o.retirada >= e) {
+        const u = this.uso(o);
+        Object.keys(u).forEach((id) => { res[id] = (res[id] || 0) + u[id]; });
+      }
+    });
+    return res;
+  }
+  livre(m, res) { return m.total - m.manut - (res[m.id] || 0); }
+  falta(o, exId) {
+    const res = this.reservado(o.entrega, o.retirada, exId), u = this.uso(o);
+    return Object.keys(u).filter((id) => u[id] > this.livre(this.mod(id), res));
+  }
+
+  renderVals() {
+    const s = this.state, p = s.precos, H = this.HOJE, ST = this.STATUS;
+    const brl = (n) => this.brl(n), dm = (x) => this.dm(x);
+    const chipOn = 'background:#E3F1EE;color:#0B5A4D;border:1px solid #0F6B5C';
+    const chipOff = 'background:#fff;color:#16201E;border:1px solid #C5CDC9';
+    const tabs = ['inicio', 'pedidos', 'novo', 'agenda', 'estoque'];
+    const go = {}, ts = {};
+    tabs.forEach((t) => {
+      go[t] = () => this.setState({ tab: t, msg: null, menu: false, vazio: {} });
+      const act = s.tab === t || (t === 'pedidos' && s.tab === 'detalhe');
+      ts[t] = act ? 'color:#0F6B5C;font-weight:600' : 'color:#5B6763;font-weight:500';
+    });
+    const scr = { inicio: s.tab === 'inicio', pedidos: s.tab === 'pedidos', novo: s.tab === 'novo', agenda: s.tab === 'agenda', estoque: s.tab === 'estoque', detalhe: s.tab === 'detalhe', pix: s.tab === 'pix', precos: s.tab === 'precos' };
+    const open = (id) => () => {
+      const o = this.state.pedidos.find((x) => x.id === id);
+      const d = o && o.dev ? o.dev : null;
+      this.setState({ tab: 'detalhe', selId: id, msg: null, pixOpt: 'saldo', pixOutro: 0, pixCopiado: false, dev: d ? { q: Object.assign({}, d.q), f: Object.assign({}, d.f), atraso: d.atraso } : { q: {}, f: {}, atraso: 0 } });
+    };
+    const msg = { erro: !!(s.msg && !s.msg.ok), ok: !!(s.msg && s.msg.ok), txt: s.msg ? s.msg.txt : '' };
+    const fm = s.filtroMat || 'Todos';
+    const visMats = fm === 'Todos' ? this.MATERIAIS : [fm];
+    const todos = s.modelos.map((m) => this.mod(m.id)).filter((m) => visMats.indexOf(m.material) >= 0);
+    const visO = (o) => fm === 'Todos' || o.itens.some((l) => (l.tipo === 'jogo' ? [l.mesa, l.cad] : l.tipo === 'mesa' ? [l.mesa] : [l.cad]).some((id) => this.mod(id).material === fm));
+    const peds = s.pedidos.filter(visO);
+    const matEst = fm === 'Todos' ? s.estMat : fm;
+    const mesas = todos.filter((m) => m.tipo === 'mesa');
+    const cadeiras = todos.filter((m) => m.tipo === 'cadeira');
+
+    // ---------- Início ----------
+    const resHoje = this.reservado(H, H);
+    const soma = (lst, fn) => lst.reduce((a, m) => a + fn(m), 0);
+    const agenda = [];
+    peds.forEach((o) => {
+      if (o.entrega === H && o.status === 'Confirmado') agenda.push({ tipo: 'Entregar', chip: 'background:#E7EEFD;color:#1E40AF', o: o });
+      if (o.retirada === H && o.status === 'Entregue') agenda.push({ tipo: 'Retirar', chip: 'background:#FDEDE3;color:#9A3412', o: o });
+    });
+    const proximos = peds
+      .filter((o) => o.entrega > H && o.status !== 'Devolvido')
+      .sort((a, b) => (a.entrega < b.entrega ? -1 : 1))
+      .map((o) => ({ cliente: o.cliente, quando: dm(o.entrega) + ' a ' + dm(o.retirada), itens: this.contagem(this.calc(o)), status: o.status, chip: ST[o.status], open: open(o.id) }));
+    let aReceber = 0;
+    peds.forEach((o) => { if (o.status === 'Confirmado' || o.status === 'Entregue') aReceber += this.calc(o).saldo; });
+    const home = {
+      mesasLivres: soma(mesas, (m) => Math.max(0, this.livre(m, resHoje))), mesasTotal: soma(mesas, (m) => m.total),
+      cadeirasLivres: soma(cadeiras, (m) => Math.max(0, this.livre(m, resHoje))), cadeirasTotal: soma(cadeiras, (m) => m.total),
+      entregas: agenda.filter((a) => a.tipo === 'Entregar').length,
+      retiradas: agenda.filter((a) => a.tipo === 'Retirar').length,
+      agenda: agenda.map((a) => ({ tipo: a.tipo, chip: a.chip, id: a.o.id, cliente: a.o.cliente, end: a.o.end, itens: this.contagem(this.calc(a.o)), open: open(a.o.id), tel: 'tel:' + a.o.tel.replace(/\D/g, '') })),
+      semAgenda: agenda.length === 0,
+      proximos: proximos,
+      aReceber: brl(aReceber)
+    };
+
+    // ---------- Pedidos ----------
+    const filtros = ['Todos', 'Orçamento', 'Confirmado', 'Entregue', 'Devolvido'].map((nome) => ({
+      nome: nome,
+      style: s.filtro === nome ? 'background:#16201E;color:#fff;border:1px solid #16201E' : chipOff,
+      pick: () => this.setState({ filtro: nome })
+    }));
+    const rows = peds
+      .filter((o) => s.filtro === 'Todos' || o.status === s.filtro)
+      .slice().sort((a, b) => (a.entrega < b.entrega ? 1 : -1))
+      .map((o) => {
+        let flag = '';
+        if (o.status === 'Confirmado' && o.entrega === H) flag = 'Entregar hoje';
+        if (o.status === 'Entregue' && o.retirada === H) flag = 'Retirar hoje';
+        if (o.status === 'Entregue' && o.retirada < H) flag = 'Retirada atrasada';
+        const c = this.calc(o);
+        return { id: o.id, cliente: o.cliente, quando: dm(o.entrega) + ' a ' + dm(o.retirada), itens: this.contagem(c), total: brl(o.final != null ? o.final : c.total), status: o.status, chip: ST[o.status], open: open(o.id), flag: flag, hasFlag: !!flag };
+      });
+    const lista = { filtros: filtros, rows: rows, vazio: rows.length === 0 };
+
+    // ---------- Novo pedido ----------
+    const f = s.form, a = s.add;
+    const fc = this.calc(f);
+    const datasOk = !!f.entrega && !!f.retirada && f.retirada >= f.entrega;
+    const resF = this.reservado(f.entrega, f.retirada);
+    const setF = (k, num) => (ev) => {
+      const raw = ev.target.value;
+      const v = num ? Math.max(0, Number(raw) || 0) : raw;
+      this.setState((st) => ({ form: Object.assign({}, st.form, { [k]: v }), msg: null }));
+    };
+    const on = {};
+    ['cliente', 'tel', 'doc', 'end', 'ref', 'entrega', 'retirada'].forEach((k) => { on[k] = setF(k, false); });
+    ['frete', 'desconto', 'sinal', 'caucao'].forEach((k) => { on[k] = this.chg('f-' + k, 0, false, (v) => this.setState((st) => ({ form: Object.assign({}, st.form, { [k]: v }), msg: null }))); });
+    const setAdd = (patch) => this.setState((st) => ({ add: Object.assign({}, st.add, patch), msg: null }));
+    const tipos = [['jogo', 'Jogo (mesa + ' + this.cpj(a.mesa) + ' cadeiras)'], ['mesa', 'Mesa avulsa'], ['cadeira', 'Cadeira avulsa']].map((t) => ({ nome: t[1], style: a.tipo === t[0] ? chipOn : chipOff, pick: () => setAdd({ tipo: t[0] }) }));
+    const mult = a.tipo === 'jogo' ? this.cpj(a.mesa) : 1;
+    const opt = (m, sel, key, perUnit) => {
+      const liv = this.livre(m, resF) - (fc.uso[m.id] || 0);
+      return {
+        nome: this.nome(m),
+        sub: brl(m.preco) + '/dia' + (perUnit ? '' : ''),
+        swatch: this.swatch(m),
+        livTxt: Math.max(0, liv) + ' livres',
+        livStyle: liv > 0 ? 'color:#0B5A4D' : 'color:#9A3412',
+        style: sel ? chipOn : 'background:#fff;color:#16201E;border:1px solid #E2E6E3',
+        pick: () => setAdd({ [key]: m.id })
+      };
+    };
+    let addUnit = 0;
+    if (a.tipo === 'jogo') addUnit = this.precoJogo(a.mesa, a.cad);
+    else if (a.tipo === 'mesa') addUnit = this.mod(a.mesa).preco;
+    else addUnit = this.mod(a.cad).preco;
+    const addLinha = () => {
+      const st = this.state, ad = st.add;
+      if (!(ad.qtd > 0)) return;
+      const nova = ad.tipo === 'jogo' ? { tipo: 'jogo', mesa: ad.mesa, cad: ad.cad, qtd: ad.qtd } : ad.tipo === 'mesa' ? { tipo: 'mesa', mesa: ad.mesa, qtd: ad.qtd } : { tipo: 'cadeira', cad: ad.cad, qtd: ad.qtd };
+      const itens = st.form.itens.slice();
+      const i = itens.findIndex((l) => l.tipo === nova.tipo && l.mesa === nova.mesa && l.cad === nova.cad);
+      if (i >= 0) itens[i] = Object.assign({}, itens[i], { qtd: itens[i].qtd + nova.qtd });
+      else itens.push(nova);
+      this.setState({ form: Object.assign({}, st.form, { itens: itens }), add: Object.assign({}, ad, { qtd: 1 }), vazio: Object.assign({}, st.vazio, { addQtd: false }), msg: null });
+    };
+    const linhas = f.itens.map((l, idx) => {
+      const info = this.linhaInfo(l);
+      return {
+        titulo: info.titulo, desc: info.desc,
+        valor: brl(this.linhaDiaria(l)) + '/dia',
+        removerLabel: 'Remover ' + info.titulo,
+        remover: () => this.setState((st) => ({ form: Object.assign({}, st.form, { itens: st.form.itens.filter((_, j) => j !== idx) }) }))
+      };
+    });
+    let estoqueOk = true;
+    const dispRows = Object.keys(fc.uso).map((id) => {
+      const m = this.mod(id), liv = this.livre(m, resF), n = fc.uso[id];
+      if (n > liv) estoqueOk = false;
+      return { nome: this.nome(m), txt: 'usa ' + n + ' de ' + Math.max(0, liv) + ' livres' };
+    });
+    let dispTitulo, dispStyle;
+    if (!datasOk) { dispTitulo = 'Confira as datas'; dispStyle = 'background:#FDEDE3;color:#9A3412'; }
+    else if (estoqueOk) { dispTitulo = 'Tudo disponível de ' + dm(f.entrega) + ' a ' + dm(f.retirada); dispStyle = 'background:#E3F1EE;color:#0B5A4D'; }
+    else { dispTitulo = 'Falta estoque de algum modelo nessas datas'; dispStyle = 'background:#FDEDE3;color:#9A3412'; }
+    const pagOpts = ['Pix', 'Dinheiro', 'Cartão', 'Transferência'].map((nome) => ({
+      nome: nome, style: f.pagamento === nome ? chipOn : chipOff,
+      pick: () => this.setState((st) => ({ form: Object.assign({}, st.form, { pagamento: nome }) }))
+    }));
+    const salvar = (status) => () => {
+      const st = this.state, ff = st.form, c = this.calc(ff);
+      const erro = (txt) => this.setState({ msg: { ok: false, txt: txt } });
+      if (!String(ff.cliente).trim()) return erro('Informe o nome do cliente.');
+      if (!String(ff.tel).trim()) return erro('Informe um telefone para contato.');
+      if (!String(ff.end).trim()) return erro('Informe o endereço de entrega.');
+      if (!(ff.entrega && ff.retirada && ff.retirada >= ff.entrega)) return erro('A retirada precisa ser no mesmo dia ou depois da entrega.');
+      if (c.mesasTot + c.cadTot === 0) return erro('Adicione pelo menos um item ao pedido.');
+      if (status === 'Confirmado') {
+        const fl = this.falta(ff);
+        if (fl.length) return erro('Falta estoque de: ' + fl.map((id) => this.nome(this.mod(id)).toLowerCase()).join(', ') + '. Troque o modelo ou salve como orçamento.');
+      }
+      const id = Math.max.apply(null, st.pedidos.map((o) => o.id)) + 1;
+      const novoP = Object.assign({}, ff, { id: id, status: status, itens: ff.itens.map((l) => Object.assign({}, l)) });
+      this.setState({
+        pedidos: [novoP].concat(st.pedidos),
+        form: this.blank(st.precos.frete),
+        tab: 'detalhe', selId: id,
+        dev: { q: {}, f: {}, atraso: 0 },
+        msg: { ok: true, txt: status === 'Orçamento' ? 'Orçamento salvo. O estoque só é reservado ao confirmar.' : 'Pedido confirmado e estoque reservado para o período.' }
+      });
+    };
+    const novo = {
+      diariasTxt: fc.d + (fc.d === 1 ? ' diária' : ' diárias'),
+      diaria: brl(fc.diaria),
+      tipos: tipos,
+      showMesa: a.tipo !== 'cadeira',
+      showCad: a.tipo !== 'mesa',
+      cadTitulo: a.tipo === 'jogo' ? 'Modelo das cadeiras (' + this.cpj(a.mesa) + ' por mesa)' : 'Modelo da cadeira',
+      mesaOpts: mesas.map((m) => opt(m, a.mesa === m.id, 'mesa')),
+      cadOpts: cadeiras.map((m) => opt(m, a.cad === m.id, 'cad')),
+      addQtd: this.vv('addQtd', a.qtd),
+      addPreco: (a.tipo === 'jogo' ? 'Jogo sai a ' : 'Unidade a ') + brl(addUnit) + '/dia' + (a.tipo === 'jogo' ? ' · usa ' + a.qtd + ' mesas e ' + (a.qtd * mult) + ' cadeiras' : ''),
+      addInc: () => { this.setState((st) => ({ vazio: Object.assign({}, st.vazio, { addQtd: false }) })); setAdd({ qtd: this.state.add.qtd + 1 }); },
+      addDec: () => { this.setState((st) => ({ vazio: Object.assign({}, st.vazio, { addQtd: false }) })); setAdd({ qtd: Math.max(1, this.state.add.qtd - 1) }); },
+      addInput: this.chg('addQtd', 1, true, (v) => setAdd({ qtd: v })),
+      addLinha: addLinha,
+      linhas: linhas, temLinhas: linhas.length > 0,
+      dispTitulo: dispTitulo, dispStyle: dispStyle, dispRows: dispRows,
+      pagOpts: pagOpts,
+      aluguel: brl(fc.aluguel), frete: brl(f.frete), desconto: '− ' + brl(f.desconto),
+      total: brl(fc.total), saldo: brl(fc.saldo),
+      salvarOrcamento: salvar('Orçamento'), salvarPedido: salvar('Confirmado')
+    };
+
+    // ---------- Detalhe / devolução ----------
+    const o = s.pedidos.find((x) => x.id === s.selId);
+    let det = { linhas: [], devGrupos: [], showVistoria: false, temAcao: false, editable: false };
+    if (o) {
+      const c = this.calc(o), dv = s.dev;
+      const editable = o.status === 'Entregue';
+      const stepD = (campo, id, dlt, max) => () => {
+        if (!editable) return;
+        this.setState((st) => {
+          const q = Object.assign({}, st.dev.q), fa = Object.assign({}, st.dev.f);
+          const tgt = campo === 'q' ? q : fa, other = campo === 'q' ? fa : q;
+          tgt[id] = Math.max(0, Math.min(max - (other[id] || 0), (tgt[id] || 0) + dlt));
+          return { dev: Object.assign({}, st.dev, { q: q, f: fa }) };
+        });
+      };
+      let avarias = 0;
+      const devGrupos = Object.keys(c.uso).map((id) => {
+        const m = this.mod(id), n = c.uso[id];
+        const q = dv.q[id] || 0, fa = dv.f[id] || 0;
+        avarias += (q + fa) * m.rep;
+        const plural = m.tipo === 'mesa' ? 'Mesas' : 'Cadeiras';
+        return {
+          nome: this.nome(m), swatch: this.swatch(m),
+          sub: n + ' no pedido · reposição ' + brl(m.rep) + ' cada',
+          rows: [
+            { label: 'Quebradas', value: q, editable: editable, inc: stepD('q', id, 1, n), dec: stepD('q', id, -1, n), incLabel: 'Aumentar ' + plural.toLowerCase() + ' quebradas', decLabel: 'Diminuir ' + plural.toLowerCase() + ' quebradas' },
+            { label: 'Faltando', value: fa, editable: editable, inc: stepD('f', id, 1, n), dec: stepD('f', id, -1, n), incLabel: 'Aumentar ' + plural.toLowerCase() + ' faltando', decLabel: 'Diminuir ' + plural.toLowerCase() + ' faltando' }
+          ]
+        };
+      });
+      const atrasoV = dv.atraso * c.diaria;
+      const final = c.total + avarias + atrasoV;
+      const abatido = (Number(o.sinal) || 0) + (Number(o.caucao) || 0);
+      const resto = final - abatido;
+      const upd = (patch, extra) => {
+        const st = this.state;
+        const pedidos = st.pedidos.map((x) => (x.id === o.id ? Object.assign({}, x, patch) : x));
+        this.setState(Object.assign({ pedidos: pedidos }, extra || {}));
+      };
+      let acaoLabel = '', acao = null;
+      if (o.status === 'Orçamento') {
+        acaoLabel = 'Confirmar pedido';
+        acao = () => {
+          const fl = this.falta(o, o.id);
+          if (fl.length) return this.setState({ msg: { ok: false, txt: 'Falta estoque de: ' + fl.map((id) => this.nome(this.mod(id)).toLowerCase()).join(', ') + '.' } });
+          upd({ status: 'Confirmado' }, { msg: { ok: true, txt: 'Pedido confirmado e estoque reservado.' } });
+        };
+      } else if (o.status === 'Confirmado') {
+        acaoLabel = 'Marcar como entregue';
+        acao = () => upd({ status: 'Entregue' }, { msg: { ok: true, txt: 'Entrega registrada. Na retirada, faça a vistoria abaixo.' } });
+      } else if (o.status === 'Entregue') {
+        acaoLabel = 'Confirmar devolução';
+        acao = () => {
+          const st = this.state, d = st.dev;
+          const modelos = st.modelos.map((m) => Object.assign({}, m, { total: Math.max(0, m.total - (d.q[m.id] || 0) - (d.f[m.id] || 0)) }));
+          upd({ status: 'Devolvido', dev: { q: Object.assign({}, d.q), f: Object.assign({}, d.f), atraso: d.atraso }, final: final }, {
+            modelos: modelos,
+            msg: { ok: true, txt: 'Devolução registrada. Quebradas e faltantes saíram do estoque; ajuste a quantidade quando repor.' }
+          });
+        };
+      }
+      // Pix
+      const temChave = !!String(s.pix.chave || '').trim();
+      const pixOpts = [['sinal', 'Sinal (50%)', Math.round(c.total * 50) / 100], ['saldo', 'Saldo (total − sinal)', c.saldo]];
+      if ((o.status === 'Entregue' || o.status === 'Devolvido') && resto > 0) pixOpts.push(['vistoria', 'Valor após vistoria', resto]);
+      pixOpts.push(['outro', 'Outro valor', Number(s.pixOutro) || 0]);
+      const optAtual = pixOpts.find((x) => x[0] === s.pixOpt) || pixOpts[1];
+      const pixValor = Math.max(0, Math.round(optAtual[2] * 100) / 100);
+      const pay = this.pixPayload(pixValor, 'PED' + o.id);
+      const qr = pixValor > 0 && temChave ? this.qr(pay.code) : null;
+      const primeiro = String(o.cliente).split(' ')[0];
+      const waTxt = 'Olá, ' + primeiro + '! Segue o Pix do pedido #' + o.id + ' (entrega ' + dm(o.entrega) + ', retirada ' + dm(o.retirada) + ').\n'
+        + optAtual[1].replace(/ \(.*\)/, '') + ': ' + brl(pixValor) + '\n\nPix copia e cola:\n' + pay.code + '\n\nRecebedor: ' + pay.nome;
+      det = {
+        gcalEntrega: this.gcal(o, 'entrega'), gcalRetirada: this.gcal(o, 'retirada'),
+        entregaDm: dm(o.entrega), retiradaDm: dm(o.retirada),
+        pixTemChave: temChave, pixSemChave: !temChave,
+        pixOpts: pixOpts.map((x) => ({ nome: x[1], style: optAtual[0] === x[0] ? chipOn : chipOff, pick: () => this.setState({ pixOpt: x[0], pixCopiado: false }) })),
+        pixIsOutro: optAtual[0] === 'outro',
+        pixOutroVal: this.vv('pixOutro', s.pixOutro),
+        onPixOutro: this.chg('pixOutro', 0, false, (v) => this.setState({ pixOutro: v, pixCopiado: false })),
+        pixTemValor: temChave && pixValor > 0, pixZero: temChave && !(pixValor > 0),
+        pixDescricao: optAtual[1] + ' · pedido #' + o.id,
+        pixValor: brl(pixValor),
+        pixTemQr: !!qr, pixSemQr: !qr,
+        pixVb: qr ? '-2 -2 ' + (qr.n + 4) + ' ' + (qr.n + 4) : '0 0 1 1',
+        pixPath: qr ? qr.d : '',
+        pixRecebedor: pay.nome + ' · ' + pay.cidade + ' · chave ' + s.pix.chave,
+        pixCode: pay.code,
+        pixCopiarLabel: s.pixCopiado ? 'Copiado!' : 'Copiar código',
+        pixCopiar: () => {
+          const ok = () => this.setState({ pixCopiado: true });
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pay.code).then(ok, () => this.setState({ msg: { ok: false, txt: 'Não deu para copiar aqui. Selecione o código e copie manualmente.' } }));
+          } catch (e) { this.setState({ msg: { ok: false, txt: 'Não deu para copiar aqui. Selecione o código e copie manualmente.' } }); }
+        },
+        pixWa: 'https://wa.me/55' + o.tel.replace(/\D/g, '') + '?text=' + encodeURIComponent(waTxt),
+        id: o.id, cliente: o.cliente, status: o.status, chip: ST[o.status],
+        end: o.end, ref: o.ref || 'Sem ponto de referência',
+        tel: o.tel, telHref: 'tel:' + o.tel.replace(/\D/g, ''),
+        periodo: 'Entrega ' + dm(o.entrega) + ' · Retirada ' + dm(o.retirada),
+        diariasTxt: c.d + (c.d === 1 ? ' diária' : ' diárias'),
+        linhas: (o.itens || []).map((l) => { const info = this.linhaInfo(l); return { titulo: info.titulo, desc: info.desc, valor: brl(this.linhaDiaria(l)) + '/dia' }; }),
+        mesasTot: c.mesasTot, cadTot: c.cadTot,
+        pagamento: o.pagamento,
+        aluguel: brl(c.aluguel), frete: brl(o.frete), desconto: '− ' + brl(o.desconto), total: brl(c.total),
+        sinal: brl(o.sinal), caucao: brl(o.caucao),
+        showVistoria: o.status === 'Entregue' || o.status === 'Devolvido',
+        devGrupos: devGrupos, editable: editable,
+        atrasoDias: dv.atraso, atrasoSub: brl(c.diaria) + ' por dia a mais',
+        atrasoInc: () => { if (editable) this.setState((st) => ({ dev: Object.assign({}, st.dev, { atraso: Math.min(30, st.dev.atraso + 1) }) })); },
+        atrasoDec: () => { if (editable) this.setState((st) => ({ dev: Object.assign({}, st.dev, { atraso: Math.max(0, st.dev.atraso - 1) }) })); },
+        avarias: brl(avarias), atraso: brl(atrasoV), final: brl(final), abatido: '− ' + brl(abatido),
+        restoLabel: resto >= 0 ? 'A receber do cliente' : 'Devolver ao cliente',
+        resto: brl(Math.abs(resto)),
+        restoStyle: resto >= 0 ? 'color:#0B5A4D' : 'color:#9A3412',
+        temAcao: !!acao, acao: acao, acaoLabel: acaoLabel
+      };
+    }
+
+    // ---------- Estoque (só quantidades) ----------
+    const jogosPor = this.COR_LIST.map((c) => {
+      const key = this.cpjKey(matEst, c.nome);
+      const mm = soma(todos.filter((m) => m.material === matEst && m.cor === c.nome && m.tipo === 'mesa'), (m) => m.total);
+      const cc = soma(todos.filter((m) => m.material === matEst && m.cor === c.nome && m.tipo === 'cadeira'), (m) => m.total);
+      const cp = p.cadPorJogo[key] || 4;
+      return {
+        cor: c.nome, swatch: this.CORES[c.nome], n: Math.min(mm, Math.floor(cc / cp)), valor: this.vv('cpj-' + key, cp),
+        inputId: 'cpj-' + c.k,
+        onChange: this.chg('cpj-' + key, 1, true, (v) => this.setState((st) => ({ precos: Object.assign({}, st.precos, { cadPorJogo: Object.assign({}, st.precos.cadPorJogo, { [key]: v }) }) })))
+      };
+    });
+    const est = {
+      jogosPor: jogosPor, mostraAbas: fm === 'Todos',
+      gridCols: 'grid-template-columns: repeat(3, minmax(0, 1fr))',
+      abas: this.MATERIAIS.map((mat) => ({
+        nome: mat, sel: s.estMat === mat,
+        style: s.estMat === mat ? 'background:#fff;color:#16201E;font-weight:600;box-shadow:0 1px 3px rgba(22,32,30,0.15)' : 'background:transparent;color:#47514E;font-weight:500',
+        pick: () => this.setState({ estMat: mat, vazio: {} })
+      })),
+      itens: this.ITENS.filter((it) => it.mats.indexOf(matEst) >= 0).map((it) => {
+        const lst = todos.filter((m) => m.material === matEst && m.tipo === it.tipo && m.braco === it.braco);
+        return {
+          label: it.label,
+          totalTxt: soma(lst, (m) => m.total) + ' no total',
+          cores: lst.map((m) => ({ nome: m.cor, swatch: this.swatch(m), total: this.vv('q-' + m.id, m.total), inputId: 'q-' + m.id, onTotal: this.chg('q-' + m.id, 0, true, (v) => this.setState((st) => ({ modelos: st.modelos.map((x) => (x.id === m.id ? Object.assign({}, x, { total: v }) : x)) }))) }))
+        };
+      })
+    };
+
+    // ---------- Preços ----------
+    const setPreco = (key, campo) => this.chg((campo === 'preco' ? 'tp-' : 'tr-') + key, 0, false, (v) => {
+      this.setState((st) => ({ tabela: Object.assign({}, st.tabela, { [key]: Object.assign({}, st.tabela[key], { [campo]: v }) }) }));
+    });
+    const prc = {
+      materiais: visMats.map((mat) => ({
+        titulo: mat,
+        itens: this.ITENS.filter((it) => it.mats.indexOf(mat) >= 0).map((it) => {
+          const key = (mat === 'Plástico' ? 'p' : 'm') + '-' + it.k, t = s.tabela[key];
+          return { label: it.label, idPreco: 'tp-' + key, idRep: 'tr-' + key, preco: this.vv('tp-' + key, t.preco), rep: this.vv('tr-' + key, t.rep), onPreco: setPreco(key, 'preco'), onRep: setPreco(key, 'rep') };
+        })
+      })),
+      descJogo: this.vv('p-dj', p.descJogo), frete: this.vv('p-fr', p.frete), 
+      onDescJogo: this.chg('p-dj', 0, false, (v) => this.setState((st) => ({ precos: Object.assign({}, st.precos, { descJogo: v }) }))),
+      onFrete: this.chg('p-fr', 0, false, (v) => this.setState((st) => ({ precos: Object.assign({}, st.precos, { frete: v }) })))
+    };
+
+    // ---------- Agenda (calendário) ----------
+    const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const ano = Number(s.calMes.slice(0, 4)), mes = Number(s.calMes.slice(5, 7));
+    const iso = (y, m, d) => y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const nDias = new Date(ano, mes, 0).getDate();
+    const inicioSem = new Date(ano, mes - 1, 1).getDay();
+    const ativos = peds;
+    const celulas = [];
+    for (let i = 0; i < inicioSem; i++) celulas.push({ vazio: true, temDia: false });
+    for (let d = 1; d <= nDias; d++) {
+      const dia = iso(ano, mes, d);
+      const ent = ativos.filter((o) => o.entrega === dia).length;
+      const ret = ativos.filter((o) => o.retirada === dia).length;
+      const sel = dia === s.calDia, hj = dia === H;
+      let style = 'background:transparent;color:#16201E;border:1px solid transparent';
+      if (hj) style = 'background:transparent;color:#0B5A4D;border:1px solid #0F6B5C;font-weight:600';
+      if (sel) style = 'background:#0F6B5C;color:#fff;border:1px solid #0F6B5C;font-weight:600';
+      let aria = d + ' de ' + MESES[mes - 1];
+      if (ent) aria += ', ' + ent + (ent === 1 ? ' entrega' : ' entregas');
+      if (ret) aria += ', ' + ret + (ret === 1 ? ' retirada' : ' retiradas');
+      celulas.push({ vazio: false, temDia: true, dia: d, style: style, temEnt: ent > 0, temRet: ret > 0, aria: aria, pick: () => this.setState({ calDia: dia }) });
+    }
+    const mudaMes = (dlt) => () => {
+      let y = ano, m = mes + dlt;
+      if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+      this.setState({ calMes: y + '-' + String(m).padStart(2, '0'), calDia: iso(y, m, 1) });
+    };
+    const evs = [];
+    peds.forEach((o) => {
+      if (o.entrega === s.calDia) evs.push({ tipo: 'Entrega', chip: 'background:#E7EEFD;color:#1E40AF', o: o });
+      if (o.retirada === s.calDia) evs.push({ tipo: 'Retirada', chip: 'background:#FDEDE3;color:#9A3412', o: o });
+    });
+    const resDia = this.reservado(s.calDia, s.calDia);
+    const mOcup = soma(mesas, (m) => resDia[m.id] || 0), cOcup = soma(cadeiras, (m) => resDia[m.id] || 0);
+    const dSel = new Date(s.calDia + 'T12:00:00');
+    const cal = {
+      titulo: MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1) + ' de ' + ano,
+      semana: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+      celulas: celulas, prev: mudaMes(-1), next: mudaMes(1),
+      diaTitulo: dSel.getDate() + ' de ' + MESES[dSel.getMonth()],
+      ocupacao: 'Na rua nesse dia: ' + mOcup + ' mesas e ' + cOcup + ' cadeiras (pedidos confirmados)',
+      eventos: evs.map((e) => ({ tipo: e.tipo, chip: e.chip, id: e.o.id, status: e.o.status, cliente: e.o.cliente, end: e.o.end, itens: this.contagem(this.calc(e.o)), open: open(e.o.id) })),
+      semEventos: evs.length === 0
+    };
+
+    // ---------- Barra superior e Config. Pix ----------
+    const abrir = (tab) => () => this.setState((st) => ({ tab: tab, menu: false, msg: null, menuFrom: (st.tab === 'pix' || st.tab === 'precos') ? st.menuFrom : st.tab }));
+    const voltar = () => this.setState((st) => ({ tab: st.menuFrom || 'inicio' }));
+    const top = {
+      aberto: !!s.menu,
+      toggle: () => this.setState((st) => ({ menu: !st.menu, menuMat: false })),
+      fechar: () => this.setState({ menu: false, menuMat: false }),
+      filtrado: fm !== 'Todos', filtroNome: fm,
+      matAberto: !!s.menuMat, matAtual: fm, chevron: s.menuMat ? 'transform:rotate(180deg)' : 'transform:none',
+      toggleMat: () => this.setState((st) => ({ menuMat: !st.menuMat })),
+      mats: ['Todos'].concat(this.MATERIAIS).map((nome) => ({
+        nome: nome, sel: fm === nome,
+        style: fm === nome ? 'background:#E3F1EE;font-weight:600' : 'background:transparent;font-weight:500',
+        ck: fm === nome ? 'opacity:1' : 'opacity:0',
+        pick: () => this.setState((st) => {
+          const fix = (id) => {
+            const cur = this.mod(id);
+            if (nome === 'Todos' || cur.material === nome) return id;
+            const c = st.modelos.map((x) => this.mod(x.id)).filter((x) => x.material === nome && x.tipo === cur.tipo);
+            const hit = c.find((x) => x.cor === cur.cor && x.braco === cur.braco) || c.find((x) => x.cor === cur.cor && !x.braco) || c[0];
+            return hit ? hit.id : id;
+          };
+          return { filtroMat: nome, menu: false, menuMat: false, vazio: {}, msg: null, estMat: nome === 'Todos' ? st.estMat : nome, add: Object.assign({}, st.add, { mesa: fix(st.add.mesa), cad: fix(st.add.cad) }) };
+        })
+      })),
+      abrirPix: abrir('pix'),
+      abrirPrecos: abrir('precos')
+    };
+    prc.voltar = voltar;
+    const setPix = (k) => (ev) => { const v = ev.target.value; this.setState((st) => ({ pix: Object.assign({}, st.pix, { [k]: v }), pixCopiado: false })); };
+    const pixcfg = {
+      chave: s.pix.chave, nome: s.pix.nome, cidade: s.pix.cidade,
+      onChave: setPix('chave'), onNome: setPix('nome'), onCidade: setPix('cidade'),
+      voltar: voltar
+    };
+
+    return { top: top, pixcfg: pixcfg, go: go, ts: ts, scr: scr, msg: msg, home: home, lista: lista, form: Object.assign({}, f, { frete: this.vv('f-frete', f.frete), desconto: this.vv('f-desconto', f.desconto), sinal: this.vv('f-sinal', f.sinal), caucao: this.vv('f-caucao', f.caucao) }), on: on, novo: novo, det: det, est: est, prc: prc, cal: cal };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-17. Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-18. Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -15,155 +15,116 @@ nenhum custo de operação.
 
 ## 1. Estrutura das telas
 
-O usuário comparou com um app parecido (zaraeventos.web.app, feito por um amigo) e
-pediu a **mesma estrutura**: menu inferior com cinco abas, painel de abertura e o
-pedido dividido em blocos com o resumo do dinheiro fixo no rodapé.
-O que ficou **diferente de propósito**: o estoque é mais simples e as cores são só
-**Branca, Preta, Vermelha e "Outra"** — ele achou o do amigo cheio de opção demais.
+**Desde 2026-11-18 a interface segue o protótipo que o usuário fez no Claude chat**
+(`handoff/`: `SPEC.md`, `prototype/Main.dc.html`, `reference/core.mjs`). Ele pediu
+"deixe igual a interface"; regras de negócio ele decide depois. Na dúvida sobre
+visual, texto ou fluxo, **o protótipo manda**.
 
-| Aba | O que faz |
-|---|---|
-| **Início** | Painel: livres agora, entregas e retiradas de hoje, a receber dos pedidos em aberto, próximos eventos. Engrenagem abre Configurações |
-| **Pedidos** | Lista com busca (cliente ou número) e filtro por situação; muda o status no cartão; toque abre o detalhe |
-| **Novo** | Datas → Itens → Cliente → Local → Valores, com o resumo do dinheiro fixo no rodapé |
-| **Agenda** | Calendário do mês com ponto de entrega e de retirada, o que acontece no dia e quanto está na rua |
-| **Estoque** | Modelos com livres/alugadas/quebradas, total, diária e reposição |
-
-**O princípio da aba Novo**: é uma calculadora, não um formulário. A pessoa abre o
-app no meio de uma conversa de WhatsApp e precisa responder "10 jogos, 1 dia, quanto
-fica?" em segundos. Por isso os itens vêm logo depois das datas, o total recalcula a
-cada toque, e cliente/endereço ficam no fim — só fazem falta na hora de salvar.
-
-**Detalhe do pedido** (abre pela lista, pela agenda ou pelo painel): valores, peças
-reservadas, situação, **registrar devolução**, **cobrar por Pix** e compartilhar o
-resumo por WhatsApp.
+- Barra de cima: "Locação de festas" + etiqueta do material filtrado + menu ⋮
+  (**Material**: Todos/Plástico/Metal, **Preços**, **Config. Pix**).
+- Abas: **Início, Pedidos, Novo, Agenda, Estoque**. Detalhe do pedido, Preços e
+  Config. Pix abrem por cima (o voltar do Android volta).
+- **Novo**: Cliente → Local → Datas → Itens (Jogo / Mesa avulsa / Cadeira avulsa,
+  modelo com "N livres", quantidade) → Valores e pagamento; resumo fixo no rodapé.
+- **Detalhe**: dados, itens e valores, vistoria (quebradas, faltando, dias de atraso)
+  com total refeito, Google Agenda (só link), Pix (Sinal 50% / Saldo / Após vistoria
+  / Outro valor, QR, copia e cola, WhatsApp) e o botão da próxima situação.
+- **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
+  "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
+- Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`),
+  tema só claro.
 
 ---
 
-## 2. Modelo de dados (Room / SQLite, versão 2)
+## 2. Modelo de dados (Room, versão 3)
+
+**15 modelos fixos** (`domain/Catalogo.kt`): Plástico = Mesa, Cadeira, Cadeira com
+braço; Metal = Mesa, Cadeira; cores Preta, Branca, Vermelha. Ids iguais aos do
+protótipo (`p-mesa-br`, `m-cadeira-pr`...).
 
 | Tabela | Para que serve |
 |---|---|
-| `item` | Catálogo e estoque: nome, categoria (MESA/CADEIRA), material, comBraco, cor, quantidadeTotal, precoDiariaCentavos, valorReposicaoCentavos, ativo |
-| `combo` | O "jogo": nome, itemMesaId, itemCadeiraId, qtdCadeiras, precoDiariaCentavos |
-| `cliente` | nome, telefone, documento (CPF/CNPJ), endereço, observações |
-| `locacao` | O pedido: cliente (id e dados copiados), endereço, ponto de referência, início e fim em epoch de segundos, frete, montagem, desconto, sinal, caução, observações, status |
-| `locacao_linha` | O que foi **vendido**: tipo (ITEM/COMBO), refId, descrição, quantidade e **preço congelado** |
-| `locacao_peca` | O que foi **reservado** em peças físicas, já com os jogos desmontados: itemId, quantidade, quantidadeDevolvida, quantidadeQuebrada e **valor de reposição congelado** |
+| `estoque` | modeloId → total. Modelo sem linha vale 0 |
+| `pedido` | cliente, telefone, CPF/CNPJ, endereço, referência, início/fim em epoch, frete, desconto, sinal, caução, pagamento, status, dias de atraso, total final |
+| `pedido_linha` | JOGO/MESA/CADEIRA, mesa, cadeira, qtd, **cadeiras por mesa e preço congelados** |
+| `pedido_peca` | o que o pedido tira do estoque, por modelo, com **reposição congelada** e a vistoria (quebradas, faltando) |
 
-Duas tabelas para o pedido porque as perguntas são diferentes: `locacao_linha`
-responde "quanto custa" e `locacao_peca` responde "quantas cadeiras estão ocupadas
-no dia 18" e recebe a conferência da devolução.
+Preços (diária e reposição por material+peça, desconto por jogo, frete padrão,
+cadeiras por mesa por material+cor), Pix e filtro de material ficam em **DataStore**.
 
-**Status:** ORCAMENTO → CONFIRMADA → ENTREGUE → DEVOLVIDA (ou CANCELADA).
-Só CONFIRMADA e ENTREGUE ocupam estoque — orçamento não reserva nada, senão um
-orçamento esquecido bloquearia mesas livres.
-
-Configuração fica em **DataStore**, não no banco: nome do negócio, chave Pix, nome
-do recebedor, cidade, frete padrão, hora padrão de entrega e de retirada.
+**Status:** Orçamento → Confirmado → Entregue → Devolvido. Só Confirmado e Entregue
+reservam estoque. Não há "cancelado" (o protótipo não tem).
 
 ### Decisões técnicas que não devem ser revertidas por acidente
 
-1. **Dinheiro é `Long` em centavos**, nunca `Double` — arredondamento binário
-   corrompe somas. Conversão só por `util/Money.kt`, coberta por testes.
-2. **Datas em epoch de segundos (`Long`)**, para a sobreposição de janelas ser uma
-   comparação numérica no SQL.
-3. **Preço e valor de reposição são congelados na linha do pedido.** Mexer no
-   catálogo não pode mudar o valor de um pedido fechado.
-4. **O jogo não tem estoque próprio** (ver seção 4).
-5. **Nenhuma permissão declarada.** É o que permite dizer "nenhum dado coletado" no
-   formulário de Segurança de Dados do Play.
-6. **Modelo já usado em pedido não é excluído, é desativado** — o histórico não pode
-   ficar sem descrição.
-7. Uma consulta única (`observarResumos`) soma os totais no SQL; a lista, o painel e
-   a agenda bebem dela, em vez de carregar as linhas pedido a pedido.
-8. Injeção manual (`di/AppContainer`), sem Hilt. Kotlin + Compose + Material 3,
-   mesma stack e versões do Finapp (AGP 9.4.1, Kotlin 2.3.21, Compose BOM 2026.09.00,
-   Room 2.8.5, minSdk 26, targetSdk 36, compileSdk 37).
+1. **Dinheiro é `Long` em centavos**, nunca `Double` (`util/Money.kt`).
+2. **Datas em epoch de segundos.** A tela só pede o dia; a entrega é gravada às 08h e
+   a retirada às 18h. Com a comparação estrita, o dia da retirada continua ocupado
+   (regra do protótipo) e a hora já está no banco para quando ele quiser escolher.
+3. **Preço, cadeiras por mesa e reposição são congelados no pedido.**
+4. **O jogo não tem estoque próprio**: 1 mesa + N cadeiras, baixa do estoque real.
+5. **Nenhuma permissão declarada.** Ligar abre o discador; WhatsApp e Google Agenda
+   são links.
+6. Todas as telas leem a lista de pedidos completa (3 consultas no total, com
+   `@Relation`) e somam em memória, como o protótipo. Regras puras em `domain/Regras.kt`.
+7. Um `MesasViewModel` só, para o app todo (o formulário do Novo sobrevive à troca de aba).
+8. Kotlin + Compose + Material 3, mesma stack do Finapp; injeção manual.
 
 ⚠️ **Pendência antes de publicar:** o banco ainda usa
-`fallbackToDestructiveMigration` — mudança de schema **apaga os dados**. Isso é
-aceitável agora, com o app só no celular de teste, mas tem que virar migração de
-verdade antes da primeira versão na Play Store.
+`fallbackToDestructiveMigration` — mudança de schema **apaga os dados**. Tem que
+virar migração de verdade antes da primeira versão na Play Store.
 
 ---
 
-## 3. Cálculo do total (como está hoje)
+## 3. Cálculo do total
 
 ```
-aluguel   = Σ (quantidade × preço da diária do item ou do jogo)
-total     = aluguel + frete + montagem − desconto + quebras
-a receber = total − sinal
-quebras   = Σ (quantidade quebrada × valor de reposição congelado)
+diária do jogo = diária da mesa + cadeiras por mesa × diária da cadeira − desconto por jogo
+aluguel        = Σ linhas  (× diárias, SE a regra for ligada)
+total          = aluguel + frete − desconto     (mínimo 0)
+saldo          = total − sinal
+vistoria       = total + (quebradas + faltando) × reposição + atraso × diária
+resto          = vistoria − (sinal + caução)    (negativo = devolver ao cliente)
 ```
 
-**Os dias ainda não multiplicam o valor.** O usuário pediu para não mexer nisso por
-enquanto ("de 100% a 50% não"), então o período serve só para a agenda e para o
-estoque, e a tela mostra "Calculado: N diárias" como informação. Quando ele decidir,
-entra como configuração (ver seção 7).
+**Os dias ainda não multiplicam o valor** — o protótipo multiplica, mas o usuário
+deixou essa regra para decidir. Chave única: `MULTIPLICAR_POR_DIAS` em
+`domain/Regras.kt`. Enquanto estiver falsa, o rodapé diz "Aluguel (valor de 1
+diária)" em vez de "2 diárias × R$ X", para não mostrar conta que não foi feita.
 
 ## 4. Estoque por data
 
-Disponível de um item numa janela = `quantidadeTotal −` o que está reservado por
-pedidos CONFIRMADA/ENTREGUE cuja janela se sobrepõe à pedida
-(`inicioA < fimB && fimA > inicioB`, com `<` e `>` estritos).
-
-**A hora conta**: retirada às 10h libera o item para uma entrega às 14h do mesmo
-dia. Sem hora, o app recusaria um aluguel que na prática dá certo. A tela continua
-simples — a pessoa escolhe as datas e o app usa as horas padrão; quem quiser ajusta,
-pelos atalhos Manhã (08h) / Tarde (13h) / Noite (18h) ou pelo relógio.
-
-**O jogo não tem estoque próprio**: 1 jogo = 1 mesa + N cadeiras e baixa do estoque
-real. Dar estoque próprio ao jogo faria a mesma cadeira ser alugada duas vezes (o
-erro clássico: 10 jogos e 40 cadeiras virarem 80 cadeiras).
+Livre = total − reservado por pedidos Confirmado/Entregue cuja janela se sobrepõe
+(`inicioA < fimB && fimA > inicioB`). Confirmar exige estoque; orçamento salva sem.
+Na devolução, quebradas e faltando **saem do total do estoque** (regra do protótipo).
 
 ## 5. Pix
 
-**BR Code estático (padrão EMV do Banco Central)** montado dentro do app
-(`util/Pix.kt`, com CRC-16/CCITT) e QR desenhado com ZXing. Offline, sem conta de
-API, sem custo. Sai em "copia e cola" e em imagem, para mandar no WhatsApp junto com
-o resumo (`ACTION_SEND`), já com o valor que falta receber.
-
-**Limite a saber:** QR estático **não avisa quando o cliente paga** — a baixa é
-manual. Confirmação automática exigiria conta PJ com API Pix de banco, fora do
-escopo e do custo zero. A própria tela diz isso.
+BR Code estático (`util/Pix.kt`), igual byte a byte ao do protótipo (teste em
+`RegrasTest`). QR com ZXing, nível M. Txid `PED<id>`. QR estático **não avisa
+quando o cliente paga** — baixa manual.
 
 ---
 
 ## 6. Feito
 
-- **Esqueleto e banco**: projeto Gradle, tema claro/escuro com cor dinâmica, ícone
-  próprio (vetor de mesa com duas cadeiras), Room com as seis tabelas.
-- **Estoque**: cadastrar e editar modelos (categoria, material, braço, cor,
-  quantidade, diária, reposição), jogos (mesa + N cadeiras + preço), com
-  livres/alugadas/quebradas por modelo.
-- **Novo pedido**: itens com quantidade livre no período, datas e horários,
-  frete/desconto/sinal/caução, cliente e endereço, resumo fixo no rodapé e os dois
-  caminhos — **Salvar orçamento** (não reserva) e **Confirmar pedido** (reserva).
-- **Pedidos**: busca, filtro por situação e mudança de status no cartão.
-- **Agenda**: calendário do mês, eventos do dia e quanto está na rua.
-- **Início**: painel com livres agora, entregas/retiradas de hoje, a receber e
-  próximos eventos.
-- **Detalhe do pedido**: valores, peças, situação, compartilhar por WhatsApp.
-- **Devolução**: quantas voltaram e quantas quebraram; o total é refeito com a
-  quebra pelo valor de reposição congelado.
-- **Pix**: copia e cola + QR, offline.
-- **Configurações**: negócio, chave Pix (chave, recebedor, cidade), frete padrão e
-  horas padrão.
-- **18 testes passando**: 5 que clicam pelas telas, 6 de dinheiro, 7 do Pix.
+- Interface inteira do protótipo (2026-11-18), com as regras de `core.mjs` portadas.
+- **25 testes passando**: 8 de regra (paridade com os números do protótipo, Pix e
+  link do Google Agenda idênticos), 4 que clicam pelas telas (estoque, novo pedido,
+  pedido confirmado → entregue → devolvido com quebra e Pix, filtro de material),
+  6 de dinheiro, 7 do Pix.
 
-## 7. Falta / próximo passo
+## 7. Falta / decisões em aberto
 
-1. **Cadastrar o estoque real no celular e conferir o cálculo** (com o usuário).
-2. **Regra de cobrança para mais de um dia** — decisão dele, ainda em aberto.
-3. **Backup em JSON**, no modelo do Finapp (manual + automático).
-4. **Migração de verdade do banco** antes de publicar (hoje recria).
-5. Conferir as telas em paisagem — nada trava orientação, mas nunca foi testado.
+1. **Multiplicar pelas diárias?** (`MULTIPLICAR_POR_DIAS`) — decisão dele.
+2. **Escolher hora de entrega/retirada** na tela (o banco já guarda a hora).
+3. Bloquear jogo com mesa de um material e cadeira de outro (hoje vale a mesa).
+4. Cadastrar o estoque real e conferir o cálculo no celular (com o usuário).
+5. Backup em JSON, no modelo do Finapp; migração de verdade do banco antes de publicar.
+6. Conferir as telas em paisagem.
 
-Ideias para depois, fora da v1:
-- Calendário do Google (fora por decisão do usuário: "não é tão importante").
-- Contrato/recibo em PDF; multa por atraso; fotos da entrega e da devolução;
-  relatório de faturamento e de utilização do estoque; itens extras (toalha, lona).
+Ideias para depois: contrato/recibo em PDF, fotos da entrega, relatório de
+faturamento, disponibilidade por cor no Início, itens extras (toalha, lona).
 
 ## 8. Como testar (obrigatório antes de dizer que está pronto)
 
@@ -183,8 +144,10 @@ Cuidados que já custaram tempo:
   fora da área visível e **os toques se perdem em silêncio**.
 - Em lista preguiçosa, o que está fora da tela **não existe**: rolar até o controle
   antes de tocar (helper `rolarAte`).
-- Procurar por marcador (`testTag`), não por texto: "Metal" também aparece nos
-  cartões dos modelos atrás do diálogo.
+- Procurar por marcador (`testTag`), não por texto. O selo de status guarda o texto
+  num filho: `esperarNoCom` procura no nó e nos descendentes.
+- **Filtro de material e preços ficam salvos entre os testes** (DataStore): teste que
+  muda o filtro tem que voltar para "Todos" num `finally`, senão derruba os outros.
 - O dinheiro usa espaço não separável depois do "R$": comparar por "100,00".
 - **Lista rolável dentro de `AlertDialog` entra em laço infinito de layout** e trava
   a tela. Diálogo com lista tem que ser `Dialog` em tela cheia.
@@ -234,3 +197,6 @@ mão do usuário e os toques caem no que ele estiver usando.
 - **2026-11-17** — material do modelo reduzido a Plástico e Metal (`435ea7a`).
 - **2026-11-18** — 18 testes passando; versão atual instalada no G73 para o usuário
   cadastrar o estoque real e conferir o cálculo.
+- **2026-11-18** — interface refeita igual ao protótipo do usuário (`handoff/`):
+  15 modelos fixos, menu ⋮ com Material/Preços/Config. Pix, vistoria com atraso e
+  caução, Pix com opções, Google Agenda por link. Banco v3 (recriado). 25 testes.

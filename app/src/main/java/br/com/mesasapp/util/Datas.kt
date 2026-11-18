@@ -37,6 +37,34 @@ object Datas {
 
     fun agoraEpochSeg(): Long = Instant.now().epochSecond
 
+    /**
+     * A tela so pede o dia. A entrega e gravada as 08h e a retirada as 18h: assim
+     * o dia da retirada ainda conta como ocupado (regra do prototipo), e o
+     * horario continua no banco para quando a pessoa quiser escolher a hora.
+     */
+    val HORA_ENTREGA: LocalTime = LocalTime.of(8, 0)
+    val HORA_RETIRADA: LocalTime = LocalTime.of(18, 0)
+
+    fun entregaEpochSeg(data: LocalDate) = paraEpochSeg(data, HORA_ENTREGA)
+    fun retiradaEpochSeg(data: LocalDate) = paraEpochSeg(data, HORA_RETIRADA)
+
+    /** Janela de um dia inteiro, para "livres hoje" e "na rua nesse dia". */
+    fun inicioDoDia(data: LocalDate) = paraEpochSeg(data, LocalTime.MIDNIGHT)
+    fun fimDoDia(data: LocalDate) = paraEpochSeg(data.plusDays(1), LocalTime.MIDNIGHT)
+
+    fun dm(data: LocalDate): String = data.format(DATA_CURTA)
+
+    private val MESES = listOf(
+        "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    )
+    private val SEMANA = listOf("Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo")
+
+    fun mes(n: Int) = MESES[n - 1]
+
+    /** "Terça-feira, 17 de novembro". */
+    fun extenso(data: LocalDate) = SEMANA[data.dayOfWeek.value - 1] + ", " + data.dayOfMonth + " de " + mes(data.monthValue)
+
     /** Dias que a locacao dura, minimo 1 (meio periodo tambem e uma diaria). */
     fun dias(inicioEpochSeg: Long, fimEpochSeg: Long): Int {
         val inicio = paraLocal(inicioEpochSeg).toLocalDate()

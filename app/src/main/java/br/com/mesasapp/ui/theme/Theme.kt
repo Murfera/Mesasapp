@@ -1,68 +1,82 @@
 package br.com.mesasapp.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import br.com.mesasapp.R
 
-val Azul40 = Color(0xFF1D4E89)
-val Azul80 = Color(0xFFA9C7F5)
-val Ambar40 = Color(0xFF8A5A00)
-val Ambar80 = Color(0xFFF2C14E)
-val Verde40 = Color(0xFF2E6B3E)
-val Verde80 = Color(0xFF9BD5A8)
-
-private val CoresClaras = lightColorScheme(primary = Azul40, secondary = Verde40, tertiary = Ambar40)
-private val CoresEscuras = darkColorScheme(primary = Azul80, secondary = Verde80, tertiary = Ambar80)
-
-/**
- * Cores de estado (disponivel / indisponivel) expostas pelo tema, para nao
- * ficarem fixas em cada tela. Os tons claros e escuros sao diferentes porque o
- * mesmo verde nao tem contraste nos dois fundos.
- */
-data class CoresEstado(val ok: Color, val alerta: Color, val erro: Color)
-
-private val LocalCoresEstado = staticCompositionLocalOf {
-    CoresEstado(Color(0xFF1B7A3D), Color(0xFF9A6400), Color(0xFFB3261E))
+/** Cores do prototipo (handoff/prototype/Main.dc.html). */
+object Cores {
+    val Fundo = Color(0xFFF6F7F5)
+    val Branco = Color(0xFFFFFFFF)
+    val Texto = Color(0xFF16201E)
+    val Texto2 = Color(0xFF3D4744)
+    val Suave = Color(0xFF5B6763)
+    val Borda = Color(0xFFE2E6E3)
+    val BordaCampo = Color(0xFFC5CDC9)
+    val Linha = Color(0xFFEEF1EF)
+    val Tracejado = Color(0xFFD5DBD8)
+    val Bolinha = Color(0xFFA9B3AE)
+    val Verde = Color(0xFF0F6B5C)
+    val VerdeEscuro = Color(0xFF0B5A4D)
+    val VerdeClaro = Color(0xFFE3F1EE)
+    val VerdeTexto = Color(0xFFCFE7E1)
+    val VerdeBorda = Color(0xFF5FA597)
+    val Cinza = Color(0xFFF1F4F2)
+    val Abas = Color(0xFFE6EAE8)
+    val Laranja = Color(0xFF9A3412)
+    val LaranjaClaro = Color(0xFFFDEDE3)
+    val Azul = Color(0xFF1E40AF)
+    val AzulClaro = Color(0xFFE7EEFD)
+    val PontoEntrega = Color(0xFF1D4ED8)
+    val PontoRetirada = Color(0xFFC2410C)
+    val Roxo = Color(0xFF5B3C99)
+    val RoxoClaro = Color(0xFFF3EEFB)
+    val CinzaStatus = Color(0xFFEEF0EF)
+    val CinzaStatusTexto = Color(0xFF47514E)
+    val QrFundo = Color(0xFFFBFCFB)
 }
 
-object MesasappTheme {
-    val estado: CoresEstado
-        @Composable @ReadOnlyComposable
-        get() = LocalCoresEstado.current
-}
+private fun variavel(res: Int, peso: Int) =
+    Font(res, FontWeight(peso), variationSettings = FontVariation.Settings(FontVariation.weight(peso)))
+
+val Inter = FontFamily(
+    variavel(R.font.inter, 400), variavel(R.font.inter, 500), variavel(R.font.inter, 600), variavel(R.font.inter, 700)
+)
+
+val SpaceGrotesk = FontFamily(
+    variavel(R.font.space_grotesk, 500), variavel(R.font.space_grotesk, 600), variavel(R.font.space_grotesk, 700)
+)
+
+private val Esquema = lightColorScheme(
+    primary = Cores.Verde,
+    onPrimary = Cores.Branco,
+    background = Cores.Fundo,
+    onBackground = Cores.Texto,
+    surface = Cores.Branco,
+    onSurface = Cores.Texto,
+    surfaceContainerHigh = Cores.Branco,
+    surfaceContainerHighest = Cores.Branco,
+    outline = Cores.BordaCampo
+)
+
+private val base = TextStyle(fontFamily = Inter, color = Cores.Texto)
+
+private val Tipografia = Typography(
+    bodyLarge = base, bodyMedium = base, bodySmall = base,
+    labelLarge = base, labelMedium = base, labelSmall = base,
+    titleLarge = base, titleMedium = base, titleSmall = base,
+    headlineLarge = base, headlineMedium = base, headlineSmall = base
+)
 
 @Composable
-fun MesasappTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> CoresEscuras
-        else -> CoresClaras
-    }
-
-    val estado = if (darkTheme) {
-        CoresEstado(ok = Color(0xFF7ED39A), alerta = Color(0xFFF2C14E), erro = Color(0xFFF2B8B5))
-    } else {
-        CoresEstado(ok = Color(0xFF1B7A3D), alerta = Color(0xFF9A6400), erro = Color(0xFFB3261E))
-    }
-
-    CompositionLocalProvider(LocalCoresEstado provides estado) {
-        MaterialTheme(colorScheme = colorScheme, content = content)
-    }
+fun MesasappTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = Esquema, typography = Tipografia, content = content)
 }

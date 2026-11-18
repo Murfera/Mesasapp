@@ -6,23 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [
-        ItemEntity::class,
-        ComboEntity::class,
-        ClienteEntity::class,
-        LocacaoEntity::class,
-        LocacaoLinhaEntity::class,
-        LocacaoPecaEntity::class
-    ],
-    version = 2,
+    entities = [EstoqueEntity::class, PedidoEntity::class, LinhaEntity::class, PecaEntity::class],
+    version = 3,
     exportSchema = true
 )
 abstract class MesasappDatabase : RoomDatabase() {
 
-    abstract fun itemDao(): ItemDao
-    abstract fun comboDao(): ComboDao
-    abstract fun clienteDao(): ClienteDao
-    abstract fun locacaoDao(): LocacaoDao
+    abstract fun dao(): MesasDao
 
     companion object {
         @Volatile private var instancia: MesasappDatabase? = null
