@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inventory2
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import br.com.mesasapp.data.preferences.TemaApp
 import br.com.mesasapp.di.AppContainer
 import br.com.mesasapp.domain.FiltroMaterial
 import br.com.mesasapp.ui.comum.Divisor
@@ -140,9 +142,10 @@ private fun BarraSuperior(vm: MesasViewModel) {
 
 @Composable
 private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
+    val tema by vm.tema.collectAsState()
     DropdownMenu(
         expanded = vm.menuAberto,
-        onDismissRequest = { vm.menuAberto = false; vm.menuMaterialAberto = false },
+        onDismissRequest = { vm.menuAberto = false; vm.menuMaterialAberto = false; vm.menuTemaAberto = false },
         offset = DpOffset((-4).dp, 0.dp),
         shape = RoundedCornerShape(12.dp),
         containerColor = Cores.Superficie,
@@ -152,27 +155,40 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
             vm.menuMaterialAberto = !vm.menuMaterialAberto
         }
         if (vm.menuMaterialAberto) {
-            Column(Modifier.padding(start = 28.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                FiltroMaterial.entries.forEach { f ->
-                    val sel = f == filtro
-                    Row(
-                        Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp))
-                            .background(if (sel) Cores.VerdeClaro else Color.Transparent)
-                            .clickable(role = Role.Button) { vm.escolherFiltro(f) }
-                            .padding(horizontal = 10.dp)
-                            .testTag("filtro_${f.name}"),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(Icons.Filled.Check, null, tint = if (sel) Cores.Destaque else Color.Transparent, modifier = Modifier.size(16.dp))
-                        T(f.rotulo, 14.sp, if (sel) 600 else 500)
-                    }
-                }
-            }
+            Opcoes(FiltroMaterial.entries, filtro, { it.rotulo }, { "filtro_${it.name}" }) { vm.escolherFiltro(it) }
         }
         Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
         ItemMenu(Icons.Outlined.LocalOffer, "Preços", null, Modifier.testTag("menu_precos")) { vm.abrirDoMenu(Tela.PRECOS) }
         ItemMenu(Icons.Outlined.QrCode2, "Config. Pix", null, Modifier.testTag("menu_pix")) { vm.abrirDoMenu(Tela.PIX) }
+        Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
+        ItemMenu(Icons.Outlined.DarkMode, "Tema", tema.rotulo, Modifier.testTag("menu_tema"), vm.menuTemaAberto) {
+            vm.menuTemaAberto = !vm.menuTemaAberto
+        }
+        if (vm.menuTemaAberto) {
+            Opcoes(TemaApp.entries, tema, { it.rotulo }, { "tema_${it.name}" }) { vm.escolherTema(it) }
+        }
+    }
+}
+
+/** Sub-lista do menu com o marcador na opcao atual (Material, Tema). */
+@Composable
+private fun <T> Opcoes(lista: List<T>, atual: T, rotulo: (T) -> String, tag: (T) -> String, aoEscolher: (T) -> Unit) {
+    Column(Modifier.padding(start = 28.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        lista.forEach { item ->
+            val sel = item == atual
+            Row(
+                Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp))
+                    .background(if (sel) Cores.VerdeClaro else Color.Transparent)
+                    .clickable(role = Role.Button) { aoEscolher(item) }
+                    .padding(horizontal = 10.dp)
+                    .testTag(tag(item)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Filled.Check, null, tint = if (sel) Cores.Destaque else Color.Transparent, modifier = Modifier.size(16.dp))
+                T(rotulo(item), 14.sp, if (sel) 600 else 500)
+            }
+        }
     }
 }
 

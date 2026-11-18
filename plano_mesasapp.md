@@ -32,7 +32,8 @@ visual, texto ou fluxo, **o protótipo manda**.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
   "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
 - Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`).
-  **Modo escuro segue o Android** (pedido do usuário): paleta escura derivada em
+  **Tema no menu ⋮ → Tema**: Automático (segue o Android, padrão), Claro ou Escuro —
+  o usuário preferiu a escolha dentro do app. Paleta escura derivada em
   `ui/theme/Theme.kt`; as telas usam `Cores.X`, nunca cor fixa. `Cores.Verde` é o
   fundo de botão cheio; `Cores.Destaque` é o verde de texto/ícone/borda.
 - **Campo numérico com zero aparece vazio** (vazio vale 0), pedido do usuário.
@@ -181,7 +182,11 @@ mão do usuário e os toques caem no que ele estiver usando.
 ## 10. Combinados de trabalho
 
 - **Git a cada etapa salva**, para dar para voltar atrás e comparar.
-- Testar no **Moto G73 por Wi-Fi**; não criar emulador nem abrir o Android Studio.
+- **Emulador liberado** (2026-11-18): AVD `Moto_G73_5G`, testar nele primeiro e
+  depois instalar no Moto G73 por Wi-Fi. Script de toques/fotos usado na sessão:
+  `adb shell input tap/text`, `uiautomator dump`, `screencap`. Cuidado: com o teclado
+  aberto a tela sobe e as coordenadas mudam — fechar o teclado (tecla 4) antes de
+  tocar no próximo campo.
 - Build release só quando ele disser que é a oficial (começando pelo keystore de
   upload, guardado fora do repositório).
 - Apresentar opções e custo antes de implementar caminho com bifurcação.
@@ -206,3 +211,6 @@ mão do usuário e os toques caem no que ele estiver usando.
   caução, Pix com opções, Google Agenda por link. Banco v3 (recriado). 25 testes.
 - **2026-11-18** — campos com zero ficam vazios; "cadeiras por mesa" vazio volta ao
   padrão 4 (antes gravava 1 escondido); modo escuro automático do Android.
+- **2026-11-18** — versão marcada `v0.2-interface-prototipo` antes das mudanças do
+  usuário. Tema escolhido no app (Automático/Claro/Escuro). Fluxo completo conferido
+  no emulador (estoque → pedido → entregue → devolução com quebra). 27 testes.

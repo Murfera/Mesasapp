@@ -18,6 +18,13 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "config")
 
+/** Tema do app: segue o Android, ou fica fixo no claro ou no escuro (menu > Tema). */
+enum class TemaApp(val rotulo: String) {
+    SISTEMA("Automático"),
+    CLARO("Claro"),
+    ESCURO("Escuro")
+}
+
 data class PixConfig(val chave: String = "", val nome: String = "", val cidade: String = "")
 
 /**
@@ -35,6 +42,7 @@ class ConfigStore(private val context: Context) {
     private val PIX_NOME = stringPreferencesKey("nome_recebedor")
     private val PIX_CIDADE = stringPreferencesKey("cidade_recebedor")
     private val FILTRO = stringPreferencesKey("filtro_material")
+    private val TEMA = stringPreferencesKey("tema")
 
     val precos: Flow<Precos> = context.dataStore.data.map { p ->
         val padrao = Precos()
@@ -70,6 +78,12 @@ class ConfigStore(private val context: Context) {
         it[PIX_NOME] = pix.nome
         it[PIX_CIDADE] = pix.cidade
     }
+
+    val tema: Flow<TemaApp> = context.dataStore.data.map { p ->
+        p[TEMA]?.let { nome -> TemaApp.entries.firstOrNull { it.name == nome } } ?: TemaApp.SISTEMA
+    }
+
+    suspend fun definirTema(t: TemaApp) = context.dataStore.edit { it[TEMA] = t.name }
 
     suspend fun definirFiltro(f: FiltroMaterial) = context.dataStore.edit { it[FILTRO] = f.name }
 }

@@ -2,6 +2,7 @@ package br.com.mesasapp
 
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,5 +33,24 @@ class TemaEscuroTest {
         regra.onNodeWithTag("menu_precos").performClick()
         regra.waitForIdle()
         regra.waitUntil(10_000) { regra.onAllNodes(hasTestTag("lista_precos")).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    /** O tema escolhido no menu fica salvo; volta para Automatico no fim. */
+    @Test
+    fun tema_muda_pelo_menu() {
+        fun escolher(t: String) {
+            regra.onNodeWithTag("botao_menu").performClick(); regra.waitForIdle()
+            regra.onNodeWithTag("menu_tema").performClick(); regra.waitForIdle()
+            regra.onNodeWithTag("tema_$t").performClick(); regra.waitForIdle()
+        }
+        regra.waitUntil(10_000) { regra.onAllNodes(hasTestTag("botao_menu")).fetchSemanticsNodes().isNotEmpty() }
+        try {
+            escolher("CLARO")
+            regra.onNodeWithTag("botao_menu").performClick(); regra.waitForIdle()
+            regra.waitUntil(10_000) { regra.onAllNodesWithText("Claro").fetchSemanticsNodes().isNotEmpty() }
+            regra.onNodeWithTag("botao_menu").performClick(); regra.waitForIdle()
+        } finally {
+            escolher("SISTEMA")
+        }
     }
 }

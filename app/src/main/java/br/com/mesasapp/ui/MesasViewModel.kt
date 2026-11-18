@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import br.com.mesasapp.data.preferences.PixConfig
+import br.com.mesasapp.data.preferences.TemaApp
 import br.com.mesasapp.di.AppContainer
 import br.com.mesasapp.domain.Catalogo
 import br.com.mesasapp.domain.Cor
@@ -84,6 +85,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     val estoque: StateFlow<Map<String, Int>> = repo.estoque().stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
     val precos: StateFlow<Precos> = config.precos.stateIn(viewModelScope, SharingStarted.Eagerly, Precos())
     val pix: StateFlow<PixConfig> = config.pix.stateIn(viewModelScope, SharingStarted.Eagerly, PixConfig())
+    val tema: StateFlow<TemaApp> = config.tema.stateIn(viewModelScope, SharingStarted.Eagerly, TemaApp.SISTEMA)
     val filtro: StateFlow<FiltroMaterial> = config.filtro.stateIn(viewModelScope, SharingStarted.Eagerly, FiltroMaterial.TODOS)
     val pedidos: StateFlow<List<Pedido>> = repo.pedidos().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -94,6 +96,13 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     var msg by mutableStateOf<Mensagem?>(null)
     var menuAberto by mutableStateOf(false)
     var menuMaterialAberto by mutableStateOf(false)
+    var menuTemaAberto by mutableStateOf(false)
+
+    fun escolherTema(t: TemaApp) {
+        viewModelScope.launch { config.definirTema(t) }
+        menuAberto = false
+        menuTemaAberto = false
+    }
 
     fun irPara(t: Tela) {
         tela = t
