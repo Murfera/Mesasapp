@@ -132,27 +132,22 @@ fun NovoTela(vm: MesasViewModel) {
             }
 
             Cartao {
-                T("Datas", 15.sp, 600)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    T("Datas", 15.sp, 600, modifier = Modifier.weight(1f))
+                    T(diariasTexto(c.dias), 13.sp, 600, Cores.Suave)
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CampoData("Entrega", f.entrega, { vm.mudarForm(f.copy(entrega = it)) }, Modifier.weight(1f))
                     CampoData("Retirada", f.retirada, { vm.mudarForm(f.copy(retirada = it)) }, Modifier.weight(1f))
                 }
-                Nota("Calculado: " + diariasTexto(c.dias))
             }
 
             Cartao {
-                Column {
-                    T("Itens", 15.sp, 600)
-                    T("Escolha o tipo, o modelo (material, braço, cor) e a quantidade.", 13.sp, 400, Cores.Suave, Modifier.padding(top = 4.dp))
-                }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(
-                        TipoLinha.JOGO to "Jogo (mesa + $cpm cadeiras)",
-                        TipoLinha.MESA to "Mesa avulsa",
-                        TipoLinha.CADEIRA to "Cadeira avulsa"
-                    ).forEach { (tipo, nome) ->
-                        Chip(nome, item.tipo == tipo, { vm.itemForm = item.copy(tipo = tipo) }, Modifier.testTag("tipo_${tipo.name}"))
-                    }
+                T("Itens", 15.sp, 600)
+                // O que vai no jogo (1 mesa + N cadeiras) aparece na linha da quantidade.
+                val tipos = listOf(TipoLinha.JOGO, TipoLinha.MESA, TipoLinha.CADEIRA)
+                Segmentos(listOf("Jogo", "Só mesa", "Só cadeira"), tipos.indexOf(item.tipo), "tipo", destaque = true) { i ->
+                    vm.itemForm = item.copy(tipo = tipos[i])
                 }
                 SeletorModelo(vm, filtro, precos) { id -> livre(id) - (c.uso[id] ?: 0) }
 
@@ -334,7 +329,7 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
 
 /** Escolha de duas opcoes lado a lado, no mesmo estilo das abas do Estoque. */
 @Composable
-private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, aoEscolher: (Int) -> Unit) {
+private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, destaque: Boolean = false, aoEscolher: (Int) -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Cores.Abas).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -345,11 +340,14 @@ private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, aoEsc
                 Modifier.weight(1f).height(40.dp)
                     .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (sel) Cores.Superficie else Color.Transparent)
+                    .background(if (sel) (if (destaque) Cores.Verde else Cores.Superficie) else Color.Transparent)
                     .clickable(role = Role.Tab) { aoEscolher(i) }
                     .testTag("${tag}_$i"),
                 contentAlignment = Alignment.Center
-            ) { T(nome, 13.sp, if (sel) 600 else 500, if (sel) Cores.Texto else Cores.Suave, umaLinha = true) }
+            ) {
+                val cor = when { sel && destaque -> Cores.SobreVerde; sel -> Cores.Texto; else -> Cores.Suave }
+                T(nome, 13.sp, if (sel) 600 else 500, cor, umaLinha = true)
+            }
         }
     }
 }
