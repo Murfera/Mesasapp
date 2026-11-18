@@ -520,7 +520,6 @@ private fun FormularioModelo(inicial: Item, aoFechar: () -> Unit, aoSalvar: (Ite
 private fun rotuloMaterial(material: Material): String = when (material) {
     Material.PLASTICO -> "Plastico"
     Material.METAL -> "Metal"
-    Material.OUTRO -> "Outro"
 }
 
 @OptIn(ExperimentalLayoutApi::class)
