@@ -1,123 +1,101 @@
 package br.com.mesasapp.data.seguranca
 
+import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.os.Build
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import br.com.mesasapp.data.preferences.ModoPrivacidade
 
 /**
- * A trava do app (menu > Privacidade).
+ * A trava do app (menu > Privacidade). Copia do `ui/lock/AppLock.kt` do Finapp,
+ * para as duas funcionarem igual.
  *
  * Quem guarda a senha e a digital e o proprio Android: o app nunca ve, nunca
  * grava e nunca compara credencial nenhuma. Ele so pergunta ao sistema "essa
- * pessoa e a dona do aparelho?" e recebe sim ou nao. Isso e deliberado — uma
- * senha propria do app seria mais um segredo para guardar, guardado pior.
+ * pessoa e a dona do aparelho?" e recebe sim ou nao.
  *
  * A trava protege a tela, nao o arquivo: os pedidos ficam na pasta privada do
- * app, que o Android ja isola de outros apps, mas nao sao cifrados. Quem tiver
- * o aparelho destravado e ferramentas de desenvolvedor alcanca o banco. Serve
- * para o celular esquecido na mesa, nao contra pericia.
+ * app, que o Android ja isola de outros apps, mas nao sao cifrados.
  */
 object Trava {
 
-    /** Sem senha, PIN ou padrao no aparelho nao existe o que pedir. */
-    fun telaDeBloqueioConfigurada(context: Context): Boolean {
-        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager ?: return false
-        return km.isDeviceSecure
-    }
-
-    fun digitalCadastrada(context: Context): Boolean =
-        BiometricManager.from(context)
-            .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+    /** Digital cadastrada no aparelho. */
+    fun temDigital(context: Context): Boolean =
+        BiometricManager.from(context).canAuthenticate(BIOMETRIC_WEAK) ==
             BiometricManager.BIOMETRIC_SUCCESS
 
-    /**
-     * Por que este modo nao pode ser escolhido agora, ou null se pode.
-     *
-     * A tela mostra o motivo em vez de so desabilitar a opcao: "nao da" sem
-     * explicacao manda o usuario adivinhar.
-     */
-    fun indisponivelPorque(context: Context, modo: ModoPrivacidade): String? = when {
-        modo == ModoPrivacidade.NENHUM -> null
+    /** Senha, PIN ou padrao configurados no celular. */
+    fun temSenhaDoCelular(context: Context): Boolean =
+        context.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
 
-        !telaDeBloqueioConfigurada(context) ->
-            "Este aparelho não tem senha, PIN ou padrão de desbloqueio. " +
-                "Configure em Ajustes → Segurança e volte aqui."
-
-        modo == ModoPrivacidade.BIOMETRIA && !digitalCadastrada(context) ->
-            "Nenhuma digital cadastrada neste aparelho. " +
-                "Cadastre em Ajustes → Segurança → Impressão digital e volte aqui."
-
-        else -> null
+    fun acharActivity(context: Context): FragmentActivity? {
+        var atual = context
+        while (atual is ContextWrapper) {
+            if (atual is FragmentActivity) return atual
+            atual = atual.baseContext
+        }
+        return null
     }
 
     /**
-     * Pede o desbloqueio ao Android e chama [aoLiberar] so se ele confirmar.
-     *
-     * A senha do aparelho e sempre aceita, inclusive no modo Digital. Nao e
-     * descuido: sensor molhado, dedo cortado ou leitor com defeito nao podem
-     * trancar o dono fora dos proprios pedidos, e quem sabe a senha do celular
-     * ja tem o aparelho todo de qualquer forma.
+     * Pede ao Android a identificacao do modo escolhido; [aoPassar] so roda se passar.
+     * Cancelar ou errar nao faz nada: o Android cuida das tentativas e dos bloqueios.
      */
-    @Suppress("DEPRECATION")
-    fun pedir(
-        activity: FragmentActivity,
-        modo: ModoPrivacidade,
-        titulo: String,
-        subtitulo: String,
-        aoLiberar: () -> Unit,
-        aoFalhar: (String) -> Unit
-    ) {
-        if (modo == ModoPrivacidade.NENHUM) {
-            aoLiberar()
-            return
+    fun autenticar(activity: FragmentActivity, modo: ModoPrivacidade, titulo: String, aoPassar: () -> Unit) {
+        when (modo) {
+            ModoPrivacidade.NENHUM -> aoPassar()
+            ModoPrivacidade.BIOMETRIA -> activity.perguntar(titulo, BIOMETRIC_WEAK, aoPassar)
+            ModoPrivacidade.DISPOSITIVO ->
+                // DEVICE_CREDENTIAL sozinho no BiometricPrompt so existe a partir do Android 11.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    activity.perguntar(titulo, DEVICE_CREDENTIAL, aoPassar)
+                } else {
+                    activity.confirmarSenhaDoCelular(titulo, aoPassar)
+                }
         }
+    }
 
-        val prompt = BiometricPrompt(
-            activity,
-            ContextCompat.getMainExecutor(activity),
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    aoLiberar()
-                }
-
-                // Desistiu, errou demais ou o leitor falhou. Dedo errado numa
-                // tentativa nao cai aqui: o proprio Android deixa tentar de novo.
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    aoFalhar(errString.toString())
-                }
+    private fun FragmentActivity.perguntar(titulo: String, autenticadores: Int, aoPassar: () -> Unit) {
+        val retorno = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                aoPassar()
             }
-        )
-
+        }
+        val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), retorno)
         val info = BiometricPrompt.PromptInfo.Builder()
             .setTitle(titulo)
-            .setSubtitle(subtitulo)
-            .setConfirmationRequired(false)
+            .setAllowedAuthenticators(autenticadores)
             .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    setAllowedAuthenticators(
-                        if (modo == ModoPrivacidade.BIOMETRIA) {
-                            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                                BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                        } else {
-                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                        }
-                    )
-                } else {
-                    // Antes do Android 11 nao da para pedir SO a senha do
-                    // aparelho pelo BiometricPrompt: a combinacao
-                    // biometria-ou-senha e a unica aceita. Nessas versoes os
-                    // dois modos acabam equivalentes, e e por isso que a tela
-                    // de Privacidade avisa.
-                    setDeviceCredentialAllowed(true)
-                }
+                // O botao de cancelar e obrigatorio quando nao ha senha do aparelho como saida.
+                if (autenticadores == BIOMETRIC_WEAK) setNegativeButtonText("Cancelar")
             }
             .build()
-
         prompt.authenticate(info)
+    }
+
+    /** Caminho do Android 8 ao 10: a tela de senha do sistema devolve um resultado. */
+    @Suppress("DEPRECATION")
+    private fun FragmentActivity.confirmarSenhaDoCelular(titulo: String, aoPassar: () -> Unit) {
+        val keyguard = getSystemService(KeyguardManager::class.java) ?: return
+        val intent = keyguard.createConfirmDeviceCredentialIntent(titulo, null) ?: return
+        var lancador: ActivityResultLauncher<Intent>? = null
+        lancador = activityResultRegistry.register(
+            "mesasapp_senha_do_celular",
+            ActivityResultContracts.StartActivityForResult()
+        ) { resultado ->
+            lancador?.unregister()
+            if (resultado.resultCode == Activity.RESULT_OK) aoPassar()
+        }
+        lancador.launch(intent)
     }
 }

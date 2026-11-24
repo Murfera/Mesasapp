@@ -67,7 +67,7 @@ class BackupRepository(
     }
 
     /**
-     * Grava um backup na pasta escolhida e faz o rodizio.
+     * Grava um backup na subpasta "Backup Mesasapp" da pasta escolhida e faz o rodizio.
      *
      * Lanca em qualquer falha; quem chamou decide o que dizer ao usuario.
      */
@@ -75,9 +75,15 @@ class BackupRepository(
         val pastaUri = config.backupPastaUri() ?: throw IllegalStateException("pasta não escolhida")
         val json = exportarJson()
 
-        val pasta = DocumentFile.fromTreeUri(context, Uri.parse(pastaUri))
+        val escolhida = DocumentFile.fromTreeUri(context, Uri.parse(pastaUri))
             ?: throw IllegalStateException("pasta inacessível")
-        if (!pasta.canWrite()) throw IllegalStateException("sem acesso de escrita à pasta")
+        if (!escolhida.canWrite()) throw IllegalStateException("sem acesso de escrita à pasta")
+
+        // Grava numa subpasta propria, criada na primeira vez. O rodizio so
+        // apaga dentro dela: nada fora dela corre o risco de sumir.
+        val pasta = escolhida.findFile(AutoBackupScheduler.SUBPASTA)?.takeIf { it.isDirectory }
+            ?: escolhida.createDirectory(AutoBackupScheduler.SUBPASTA)
+            ?: throw IllegalStateException("não foi possível criar a subpasta")
 
         val arquivo = pasta.createFile("application/json", AutoBackupScheduler.nomeDoArquivo())
             ?: throw IllegalStateException("não foi possível criar o arquivo")
@@ -96,13 +102,14 @@ class BackupRepository(
      * Rodizio em vez de sobrescrever um arquivo unico: se um backup sair
      * corrompido e for o unico, nao sobra para onde voltar.
      *
-     * A ordem vem do nome, que comeca com a data no formato ano-mes-dia: ordenar
-     * texto equivale a ordenar data.
+     * A ordem vem da data de modificacao, nao do nome (como no Finapp): quando
+     * dois backups caem no mesmo minuto, o sistema inventa sufixos como "(1)" e
+     * a ordem alfabetica deixa de corresponder a ordem no tempo.
      */
     private fun rodizio(pasta: DocumentFile) {
         pasta.listFiles()
             .filter { it.name?.startsWith(AutoBackupScheduler.PREFIXO) == true }
-            .sortedByDescending { it.name }
+            .sortedByDescending { it.lastModified() }
             .drop(AutoBackupScheduler.MANTER_ARQUIVOS)
             .forEach { it.delete() }
     }

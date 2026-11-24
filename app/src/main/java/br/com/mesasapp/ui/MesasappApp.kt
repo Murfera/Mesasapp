@@ -70,7 +70,7 @@ import br.com.mesasapp.ui.telas.InicioTela
 import br.com.mesasapp.ui.telas.NovoTela
 import br.com.mesasapp.ui.telas.PedidosTela
 import br.com.mesasapp.ui.telas.PrecosTela
-import br.com.mesasapp.ui.telas.PrivacidadeTela
+import br.com.mesasapp.ui.telas.PrivacidadeDialogo
 import br.com.mesasapp.ui.theme.Cores
 import br.com.mesasapp.ui.theme.SpaceGrotesk
 
@@ -94,10 +94,12 @@ fun MesasappApp(container: AppContainer) {
         Modifier
             .fillMaxSize()
             .background(Cores.Fundo)
-            .windowInsetsPadding(WindowInsets.navigationBars)
+            // No Backup quem cuida das bordas e o Scaffold da tela, como no Finapp.
+            .then(if (vm.tela == Tela.BACKUP) Modifier else Modifier.windowInsetsPadding(WindowInsets.navigationBars))
             .imePadding()
     ) {
-        BarraSuperior(vm)
+        // O Backup ocupa a tela inteira, como no Finapp: sem a barra de cima nem as abas.
+        if (vm.tela != Tela.BACKUP) BarraSuperior(vm)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (vm.tela) {
                 Tela.INICIO -> InicioTela(vm)
@@ -110,11 +112,13 @@ fun MesasappApp(container: AppContainer) {
                 Tela.PIX -> ConfigPixTela(vm)
                 Tela.PAGAMENTO -> ConfigPagamentoTela(vm)
                 Tela.BACKUP -> BackupTela(vm)
-                Tela.PRIVACIDADE -> PrivacidadeTela(vm)
             }
         }
-        BarraDeAbas(vm)
+        if (vm.tela != Tela.BACKUP) BarraDeAbas(vm)
     }
+
+    // Menu > Privacidade: janelinha por cima da tela atual, como no Finapp.
+    if (vm.privacidadeAberta) PrivacidadeDialogo(vm)
 }
 
 @Composable
@@ -171,7 +175,7 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
         ItemMenu(Icons.Outlined.QrCode2, "Config. Pix", null, Modifier.testTag("menu_pix")) { vm.abrirDoMenu(Tela.PIX) }
         ItemMenu(Icons.Outlined.Payments, "Exibir", null, Modifier.testTag("menu_pagamento")) { vm.abrirDoMenu(Tela.PAGAMENTO) }
         ItemMenu(Icons.Outlined.Backup, "Backup", null, Modifier.testTag("menu_backup")) { vm.abrirDoMenu(Tela.BACKUP) }
-        ItemMenu(Icons.Outlined.Lock, "Privacidade", null, Modifier.testTag("menu_privacidade")) { vm.abrirDoMenu(Tela.PRIVACIDADE) }
+        ItemMenu(Icons.Outlined.Lock, "Privacidade", null, Modifier.testTag("menu_privacidade")) { vm.menuAberto = false; vm.privacidadeAberta = true }
         Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
         ItemMenu(Icons.Outlined.DarkMode, "Tema", tema.rotulo, Modifier.testTag("menu_tema"), vm.menuTemaAberto) {
             vm.menuTemaAberto = !vm.menuTemaAberto

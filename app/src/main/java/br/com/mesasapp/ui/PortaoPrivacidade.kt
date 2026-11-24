@@ -1,130 +1,131 @@
 package br.com.mesasapp.ui
 
-import androidx.compose.foundation.background
+import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import br.com.mesasapp.data.preferences.ModoPrivacidade
 import br.com.mesasapp.data.seguranca.Trava
-import br.com.mesasapp.ui.comum.Botao
-import br.com.mesasapp.ui.comum.EstiloBotao
-import br.com.mesasapp.ui.comum.Nota
-import br.com.mesasapp.ui.comum.T
-import br.com.mesasapp.ui.comum.Titulo
-import br.com.mesasapp.ui.theme.Cores
+import br.com.mesasapp.ui.comum.TemaDoFinapp
+
+/** Tempo fora do app que ainda nao trava de novo (o mesmo do Finapp). */
+private const val TRAVAR_DEPOIS_MS = 30_000L
 
 /**
- * Fica entre o app e a pessoa: com a trava ligada (menu > Privacidade), nada do
- * conteudo e montado antes do Android confirmar quem esta ali.
+ * Fica entre o app e a pessoa, com o mesmo funcionamento do Finapp: com a trava
+ * ligada (menu > Privacidade), pede a identificacao ao abrir o app e ao voltar
+ * depois de 30 s fora. Ate passar, mostra a tela "Bloqueado"; os pedidos nem
+ * chegam a ser montados.
  *
- * O conteudo nao e apenas coberto, e sim nao composto: um pedido nao chega a
- * virar pixel sem o desbloqueio, nem por um frame.
+ * [aoDesligar] grava "Sem senha" quando o jeito escolhido sumiu do aparelho.
  */
 @Composable
-fun PortaoPrivacidade(modo: ModoPrivacidade, conteudo: @Composable () -> Unit) {
+fun PortaoPrivacidade(
+    modo: ModoPrivacidade,
+    aoDesligar: () -> Unit,
+    conteudo: @Composable () -> Unit
+) {
     val context = LocalContext.current
-    val activity = context as? FragmentActivity
+    val modoAtual by rememberUpdatedState(modo)
 
-    // Se a trava esta ligada mas o aparelho perdeu a senha depois disso, nao ha
-    // como autenticar: insistir trancaria o dono fora dos proprios pedidos para
-    // sempre. Nesse caso o app abre, e a tela de Privacidade explica o porque.
-    val possivel = activity != null &&
-        modo != ModoPrivacidade.NENHUM &&
-        Trava.telaDeBloqueioConfigurada(context)
+    // So o abrir do app (e a volta depois de 30 s) tranca. Ligar a trava pelo
+    // menu nao tranca na hora: quem ligou acabou de se identificar duas vezes.
+    var travado by remember { mutableStateOf(modo != ModoPrivacidade.NENHUM) }
+    if (modo == ModoPrivacidade.NENHUM && travado) travado = false
 
-    var liberado by remember(modo) { mutableStateOf(!possivel) }
-    var erro by remember(modo) { mutableStateOf<String?>(null) }
+    fun desbloquear() {
+        val activity = Trava.acharActivity(context) ?: run { travado = false; return }
+        // O jeito escolhido pode ter desaparecido depois (digital apagada, senha do
+        // celular removida). Sem nenhuma forma de provar quem e, os dados ficariam
+        // inacessiveis para sempre: ai o bloqueio se desliga.
+        val usavel = when (modoAtual) {
+            ModoPrivacidade.BIOMETRIA -> when {
+                Trava.temDigital(context) -> ModoPrivacidade.BIOMETRIA
+                Trava.temSenhaDoCelular(context) -> ModoPrivacidade.DISPOSITIVO
+                else -> ModoPrivacidade.NENHUM
+            }
+            ModoPrivacidade.DISPOSITIVO ->
+                if (Trava.temSenhaDoCelular(context)) ModoPrivacidade.DISPOSITIVO else ModoPrivacidade.NENHUM
+            ModoPrivacidade.NENHUM -> ModoPrivacidade.NENHUM
+        }
+        if (usavel == ModoPrivacidade.NENHUM) {
+            aoDesligar()
+            travado = false
+            return
+        }
+        Trava.autenticar(activity, usavel, titulo = "Desbloquear o Mesasapp") { travado = false }
+    }
 
-    // Sair do app tranca de novo: deixar destravado para sempre depois do
-    // primeiro desbloqueio do dia nao travaria nada.
+    // Pequena tolerancia: escolher a pasta do backup sai do app e nao deve travar.
     val dono = LocalLifecycleOwner.current
-    DisposableEffect(dono, possivel) {
+    var saiuEm by remember { mutableStateOf(0L) }
+    DisposableEffect(dono) {
         val observador = LifecycleEventObserver { _, evento ->
-            if (evento == Lifecycle.Event.ON_STOP && possivel) {
-                liberado = false
-                erro = null
+            when (evento) {
+                Lifecycle.Event.ON_STOP -> saiuEm = SystemClock.elapsedRealtime()
+                Lifecycle.Event.ON_START -> {
+                    val fora = SystemClock.elapsedRealtime() - saiuEm
+                    if (saiuEm != 0L && modoAtual != ModoPrivacidade.NENHUM && !travado &&
+                        fora > TRAVAR_DEPOIS_MS
+                    ) {
+                        travado = true
+                        desbloquear()
+                    }
+                }
+                else -> Unit
             }
         }
         dono.lifecycle.addObserver(observador)
         onDispose { dono.lifecycle.removeObserver(observador) }
     }
 
-    fun pedirDesbloqueio() {
-        val act = activity ?: return
-        erro = null
-        Trava.pedir(
-            activity = act,
-            modo = modo,
-            titulo = "Mesasapp",
-            subtitulo = "Desbloqueie para ver os pedidos",
-            aoLiberar = { liberado = true },
-            aoFalhar = { erro = it }
-        )
-    }
+    // Ao abrir o app ja pede, como o Finapp.
+    LaunchedEffect(Unit) { if (travado) desbloquear() }
 
-    // Pede sozinho ao abrir: obrigar um toque a mais antes do que o Android ja
-    // vai perguntar so acrescenta atrito. O botao existe para a segunda vez.
-    LaunchedEffect(liberado, possivel) {
-        if (!liberado && possivel) pedirDesbloqueio()
-    }
-
-    if (liberado) conteudo() else TelaTravada(erro) { pedirDesbloqueio() }
+    if (travado) TelaBloqueada { desbloquear() } else conteudo()
 }
 
+/** A mesma tela do Finapp: nome do app, "Bloqueado" e o botao. */
 @Composable
-private fun TelaTravada(erro: String?, aoDesbloquear: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().background(Cores.Fundo).padding(32.dp).testTag("tela_travada"),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Column(
-            Modifier.size(72.dp).clip(CircleShape).background(Cores.VerdeClaro),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(Icons.Outlined.Lock, null, tint = Cores.VerdeEscuro, modifier = Modifier.size(32.dp))
+private fun TelaBloqueada(aoDesbloquear: () -> Unit) {
+    TemaDoFinapp {
+        Surface(modifier = Modifier.fillMaxSize().testTag("tela_travada")) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Mesasapp", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    text = "Bloqueado",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+                )
+                Button(onClick = aoDesbloquear, modifier = Modifier.testTag("botao_desbloquear")) {
+                    Text("Desbloquear")
+                }
+            }
         }
-
-        Titulo("Mesasapp bloqueado")
-        T(
-            "Confirme que é você para ver os pedidos.",
-            14.sp, 400, Cores.Suave, alinhar = TextAlign.Center
-        )
-
-        if (erro != null) Nota(erro)
-
-        Botao(
-            "Desbloquear",
-            aoDesbloquear,
-            Modifier.fillMaxWidth().testTag("botao_desbloquear"),
-            estilo = EstiloBotao.PRIMARIO
-        )
     }
 }

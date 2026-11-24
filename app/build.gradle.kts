@@ -101,6 +101,10 @@ dependencies {
     // Menu > Privacidade. Quem guarda e confere a senha e a digital e o
     // Android: esta biblioteca so faz a pergunta e recebe sim ou nao.
     implementation(libs.androidx.biometric)
+    // O biometric puxa o fragment 1.2.5, cujo FragmentActivity recusa os
+    // requestCode do rememberLauncherForActivityResult ("Can only use lower 16
+    // bits for requestCode") e derrubava o app nos botoes do Backup.
+    implementation(libs.androidx.fragment)
 
     // Geracao do QR Code do Pix, offline. Nenhuma chamada de rede.
     implementation(libs.zxing.core)

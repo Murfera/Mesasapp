@@ -9,7 +9,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import br.com.mesasapp.data.preferences.ModoPrivacidade
 import br.com.mesasapp.data.preferences.TemaApp
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.fragment.app.FragmentActivity
 import br.com.mesasapp.ui.MesasappApp
 import br.com.mesasapp.ui.PortaoPrivacidade
@@ -52,7 +55,14 @@ class MainActivity : FragmentActivity() {
             }
             MesasappTheme(escuro = escuro) {
                 val modo by container.configStore.privacidade.collectAsState(initial = modoInicial)
-                PortaoPrivacidade(modo) { MesasappApp(container) }
+                PortaoPrivacidade(
+                    modo = modo,
+                    aoDesligar = {
+                        lifecycleScope.launch {
+                            container.configStore.definirPrivacidade(ModoPrivacidade.NENHUM)
+                        }
+                    }
+                ) { MesasappApp(container) }
             }
         }
     }

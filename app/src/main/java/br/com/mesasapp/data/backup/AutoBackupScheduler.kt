@@ -23,7 +23,11 @@ import java.util.concurrent.TimeUnit
 object AutoBackupScheduler {
 
     private const val NOME_TAREFA = "backup-automatico"
-    const val MANTER_ARQUIVOS = 7
+    /** Quatro dias para tras bastam para escapar de um backup estragado (decisao dele, 2026-11-24). */
+    const val MANTER_ARQUIVOS = 4
+
+    /** Subpasta criada dentro da pasta escolhida, para nao misturar com outros arquivos (ex.: os do Finapp). */
+    const val SUBPASTA = "Backup Mesasapp"
     const val PREFIXO = "mesasapp-backup-"
 
     private val SELO = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")

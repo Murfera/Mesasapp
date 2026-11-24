@@ -39,12 +39,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 enum class Tela {
-    INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX, PAGAMENTO, BACKUP, PRIVACIDADE
+    INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX, PAGAMENTO, BACKUP
 }
 
 /** Telas que abrem por cima, pelo menu dos tres pontinhos, e voltam para a anterior. */
 private val TELAS_DO_MENU =
-    setOf(Tela.PRECOS, Tela.PIX, Tela.PAGAMENTO, Tela.BACKUP, Tela.PRIVACIDADE)
+    setOf(Tela.PRECOS, Tela.PIX, Tela.PAGAMENTO, Tela.BACKUP)
 
 data class Mensagem(val ok: Boolean, val texto: String)
 
@@ -120,21 +120,17 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         menuTemaAberto = false
     }
 
+    /** Menu > Privacidade e uma janelinha por cima da tela atual, como no Finapp. */
+    var privacidadeAberta by mutableStateOf(false)
+
     /**
      * Grava o modo de privacidade.
      *
-     * Quem chama ja passou pelo desbloqueio quando era para ligar a trava: a
-     * tela confirma antes, para nao gravar uma trava que o aparelho nao abre.
+     * Quem chama ja passou pelo desbloqueio atual e pelo novo: a janelinha
+     * confirma antes, para nao gravar uma trava que o aparelho nao abre.
      */
     fun definirPrivacidade(m: ModoPrivacidade) {
-        viewModelScope.launch {
-            config.definirPrivacidade(m)
-            msg = Mensagem(
-                true,
-                if (m == ModoPrivacidade.NENHUM) "O app volta a abrir sem pedir desbloqueio."
-                else "Bloqueio ligado: ${m.rotulo.lowercase()}."
-            )
-        }
+        viewModelScope.launch { config.definirPrivacidade(m) }
     }
 
     fun avisar(ok: Boolean, texto: String) {
@@ -344,7 +340,8 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun definirPix(p: PixConfig) = viewModelScope.launch { config.definirPix(p) }
 
-    // --- backup (menu > Backup) ---
+    // --- backup (menu > Backup), igual ao do Finapp ---
+    // As funcoes devolvem a frase para a tela mostrar no rodape (snackbar).
 
     val backupAutomatico: StateFlow<Boolean> =
         config.backupAutomatico.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -353,94 +350,54 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     val backupUltimoEm: StateFlow<Long?> =
         config.backupUltimoEm.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** JSON lido do arquivo, esperando a confirmacao de quem vai perder os dados atuais. */
-    var restauracaoPendente by mutableStateOf<String?>(null)
-
     /** Nome sugerido ao salvar: datado, para varios backups conviverem na pasta. */
-    fun nomeSugeridoDoBackup(): String = AutoBackupScheduler.nomeDoArquivo()
+    fun nomeSugeridoDoBackup(): String = "mesasapp-backup-" + LocalDate.now() + ".json"
 
+    /** Backup manual: o destino e escolhido pelo usuario no seletor do sistema. */
     suspend fun montarBackup(): String = backup.exportarJson()
 
-    /** Texto do arquivo escolhido: guarda para confirmar antes de substituir nada. */
-    fun prepararRestauracao(texto: String?) {
-        if (texto == null) {
-            msg = Mensagem(false, "Não foi possível abrir o arquivo.")
-            return
-        }
-        msg = null
-        restauracaoPendente = texto
-    }
-
-    fun cancelarRestauracao() { restauracaoPendente = null }
-
-    fun confirmarRestauracao() {
-        val texto = restauracaoPendente ?: return
-        restauracaoPendente = null
-        viewModelScope.launch {
-            msg = try {
-                val r = backup.restaurarDeJson(texto)
-                val pedidos = if (r.pedidos == 1) "1 pedido" else "${r.pedidos} pedidos"
-                Mensagem(
-                    true,
-                    if (r.config) "Backup restaurado: $pedidos, o estoque e os preços."
-                    else "Backup restaurado: $pedidos e o estoque."
-                )
-            } catch (e: BackupFormatException) {
-                Mensagem(false, e.message ?: "Não foi possível ler o backup.")
-            } catch (e: Exception) {
-                Mensagem(false, "Falha ao restaurar o backup.")
-            }
-        }
-    }
-
-    fun backupSalvo(ok: Boolean) {
-        msg = if (ok) Mensagem(true, "Backup salvo no arquivo escolhido.")
-        else Mensagem(false, "Não foi possível salvar o backup.")
+    /** Devolve a mensagem a mostrar: sucesso contado ou o motivo da recusa. */
+    suspend fun restaurarBackup(texto: String): String = try {
+        val r = backup.restaurarDeJson(texto)
+        "Backup restaurado: ${r.pedidos} pedidos"
+    } catch (e: BackupFormatException) {
+        e.message ?: "Não foi possível ler o backup."
+    } catch (e: Exception) {
+        "Falha ao restaurar o backup."
     }
 
     /**
      * Guarda a pasta, liga o agendamento e **grava um backup na hora**: sem isso
      * o usuario ficaria dias sem saber se a escolha funcionou.
      */
-    fun pastaEscolhida(uri: Uri) {
-        viewModelScope.launch {
-            try {
-                container.appContext.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-                config.definirBackupPasta(uri.toString())
-                config.definirBackupAutomatico(true)
-                AutoBackupScheduler.agendar(container.appContext)
-                backupAgora()
-            } catch (e: SecurityException) {
-                msg = Mensagem(false, "Não foi possível guardar o acesso a essa pasta.")
-            }
-        }
+    suspend fun pastaEscolhida(uri: Uri): String = try {
+        container.appContext.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        )
+        config.definirBackupPasta(uri.toString())
+        config.definirBackupAutomatico(true)
+        AutoBackupScheduler.agendar(container.appContext)
+        backupAgora()
+    } catch (e: SecurityException) {
+        "Não foi possível guardar o acesso a essa pasta."
     }
 
     fun desligarBackupAutomatico() {
         viewModelScope.launch {
             config.definirBackupAutomatico(false)
             AutoBackupScheduler.cancelar(container.appContext)
-            msg = null
         }
     }
 
-    fun backupAgoraNaPasta() = viewModelScope.launch { backupAgora() }
-
-    private suspend fun backupAgora() {
-        msg = if (config.backupPastaUri() == null) {
-            Mensagem(false, "Escolha uma pasta primeiro.")
-        } else {
-            try {
-                backup.gravarNaPasta()
-                Mensagem(true, "Backup salvo na pasta escolhida.")
-            } catch (e: SecurityException) {
-                Mensagem(false, "A pasta escolhida não está mais acessível. Escolha outra.")
-            } catch (e: Exception) {
-                Mensagem(false, "Falha ao salvar o backup na pasta.")
-            }
+    suspend fun backupAgora(): String {
+        if (config.backupPastaUri() == null) return "Escolha uma pasta primeiro."
+        return try {
+            // Mesmo caminho de escrita do agendamento, rodizio incluido.
+            backup.gravarNaPasta()
+            "Backup salvo na pasta escolhida"
+        } catch (e: Exception) {
+            "Falha ao salvar o backup."
         }
     }
 

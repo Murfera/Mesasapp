@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-24. Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-24 (fim do dia). Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -21,7 +21,27 @@ nenhum custo de operação.
 visual, texto ou fluxo, **o protótipo manda**.
 
 - Barra de cima: "Locação de festas" + etiqueta do material filtrado + menu ⋮
-  (**Material**: Todos/Plástico/Metal, **Preços**, **Config. Pix**, **Exibir**, **Tema**).
+  (**Material**: Todos/Plástico/Metal, **Preços**, **Config. Pix**, **Exibir**, **Backup**,
+  **Privacidade**, **Tema**).
+- **Backup e Privacidade são cópias exatas do Finapp** (pedido do usuário em 2026-11-24:
+  "idêntico"): mesmos textos, posições, cores do sistema (dinâmicas, do papel de parede),
+  fonte padrão do Material e funcionamento. Claro/escuro nessas telas **segue o celular**,
+  como no Finapp, e não o Tema do menu (`ui/comum/TemaDoFinapp.kt`). Referência:
+  `Finapp/.../ui/settings/SettingsScreen.kt` (Backup), `ui/home/HomeScreen.kt` (janelinha
+  Privacidade), `MainActivity.kt` (tela Bloqueado) e `ui/lock/AppLock.kt` (trava).
+  - **Backup** ocupa a tela inteira (sem barra de cima nem abas). Manual: JSON pelo seletor
+    do sistema. Automático: escolhe a pasta uma vez; grava 1× por dia com o celular
+    carregando (WorkManager) na **subpasta "Backup Mesasapp"** criada dentro da pasta
+    escolhida; mantém os **4** mais recentes (decisão dele; o Finapp mantém 7 e não tem
+    subpasta). Rodízio por data de modificação, só dentro da subpasta.
+  - **Privacidade** é uma janelinha por cima da tela atual (Sem senha / Senha do celular /
+    Digital). Trocar pede a proteção atual e depois a nova. Ao abrir o app: tela
+    "Mesasapp / Bloqueado / Desbloquear"; trava de novo só depois de 30 s fora (escolher a
+    pasta do backup sai do app). Se o jeito escolhido sumir do aparelho, desliga sozinho.
+- **Ícone**: arte do usuário (`app/src/main/ic_launcher.svg`; 512 px para a Play Store em
+  `ic_launcher-playstore.png`). Ícone adaptativo gerado em `res/mipmap-*` (arte em 66 dp
+  dentro de 108 dp, fundo #0F6E56, versão monocromática). A pasta `icone/` na raiz é a de
+  trabalho dele (fora do Git).
 - **Exibir** (menu ⋮): chaves "Sinal pago" e "Caução", **desligadas por padrão**; só
   com elas ligadas os campos aparecem no Novo pedido. Desligar zera o valor digitado.
 - Abas: **Início, Pedidos, Novo, Agenda, Estoque**. Detalhe do pedido, Preços e
@@ -93,12 +113,17 @@ reservam estoque. Não há "cancelado" (o protótipo não tem).
    (regra do protótipo) e a hora já está no banco para quando ele quiser escolher.
 3. **Preço, cadeiras por mesa e reposição são congelados no pedido.**
 4. **O jogo não tem estoque próprio**: 1 mesa + N cadeiras, baixa do estoque real.
-5. **Nenhuma permissão declarada.** Ligar abre o discador; WhatsApp e Google Agenda
-   são links.
+5. **Nenhuma permissão declarada pelo app.** Ligar abre o discador; WhatsApp e Google
+   Agenda são links. As bibliotecas somam só permissões normais (WorkManager e biometria);
+   `FOREGROUND_SERVICE` é removida no manifesto. Lista explicada no `AndroidManifest.xml`.
 6. Todas as telas leem a lista de pedidos completa (3 consultas no total, com
    `@Relation`) e somam em memória, como o protótipo. Regras puras em `domain/Regras.kt`.
 7. Um `MesasViewModel` só, para o app todo (o formulário do Novo sobrevive à troca de aba).
 8. Kotlin + Compose + Material 3, mesma stack do Finapp; injeção manual.
+9. **`androidx.fragment` declarado explicitamente (1.8.9).** O biometric puxa o 1.2.5, cujo
+   `FragmentActivity` derruba o app ao abrir qualquer seletor de arquivo ("Can only use
+   lower 16 bits for requestCode"). O Finapp tem a mesma dependência antiga — o Backup dele
+   funciona no aparelho do usuário, mas vale conferir se mexer lá.
 
 ⚠️ **Pendência antes de publicar:** o banco ainda usa
 `fallbackToDestructiveMigration` — mudança de schema **apaga os dados**. Tem que
@@ -164,7 +189,9 @@ quando o cliente paga** — baixa manual.
    por "Total"; sem resposta ainda.
 3. Bloquear jogo com mesa de um material e cadeira de outro (hoje vale a mesa).
 4. Cadastrar o estoque real e conferir o cálculo no celular (com o usuário).
-5. Backup em JSON, no modelo do Finapp; migração de verdade do banco antes de publicar.
+5. Migração de verdade do banco antes de publicar (o backup em JSON já existe).
+8. **Restaurar backup** ainda não foi testado no celular (só gravar). Testar com cuidado:
+   restaurar **substitui** os pedidos reais do aparelho.
 6. Conferir as telas em paisagem.
 
 Ideias para depois: contrato/recibo em PDF, fotos da entrega, relatório de
@@ -214,9 +241,15 @@ A porta e o código de pareamento **só valem enquanto a janela está aberta** n
 celular. Depois de parear, `adb mdns services` revela a porta de conexão sozinho —
 não precisa pedir o segundo número.
 
+Em 2026-11-24 o IP era 192.168.15.6.
+
 **Não mexer no aparelho**: nada de girar a tela, mudar configuração do sistema ou
 navegar por toques via adb. Instalar e, se precisar, tirar print. O celular está na
-mão do usuário e os toques caem no que ele estiver usando.
+mão do usuário e os toques caem no que ele estiver usando. **Exceção:** quando ele
+pede para comparar telas ("abre no celular"), navegar até a tela (`uiautomator dump` +
+`input tap`) e tirar print está liberado. Não tocar em opções que mudem dados ou o
+bloqueio. Comparar **no celular**, não só pelo código: foi assim que apareceu o texto
+escuro sobre fundo escuro na tela de Backup.
 
 ## 10. Combinados de trabalho
 
@@ -226,8 +259,8 @@ mão do usuário e os toques caem no que ele estiver usando.
   -A n -t u1 -j 60 -N 4 databases/mesasapp.db` → tem que dar 3) e só então `install -r`.
   Nunca desinstalar, limpar dados nem mudar schema/versão do banco sem explicar antes.
   Pacote do debug: `br.com.mesasapp.debug`.
-- **Emulador liberado** (2026-11-18): AVD `Moto_G73_5G`, testar nele primeiro e
-  depois instalar no Moto G73 por Wi-Fi. Script de toques/fotos usado na sessão:
+- **Nada de emulador no Mesasapp** (desde 2026-11-24, pedido dele: "é para vc instalar
+  no celular"; antes era liberado). Script de toques/fotos usado nas sessões:
   `adb shell input tap/text`, `uiautomator dump`, `screencap`. Cuidado: com o teclado
   aberto a tela sobe e as coordenadas mudam — fechar o teclado (tecla 4) antes de
   tocar no próximo campo.
@@ -273,3 +306,10 @@ mão do usuário e os toques caem no que ele estiver usando.
 - **2026-11-24** — Início: quadro de jogos disponíveis hoje por tipo de cadeira e divisão
   por material/tipo nos quadros de mesas e cadeiras. Se o usuário não gostar, voltar
   `InicioTela.kt` para a marca `antes-inicio-jogos`.
+- **2026-11-24** — Backup (`22ed419`, `c4f3f84`, feitos pelo usuário em outra máquina) não
+  funcionava: o app fechava ao tocar nos botões (fragment antigo, ver decisão 9). Telas de
+  Backup e Privacidade refeitas **idênticas às do Finapp** (comparadas por print no celular),
+  com a trava do Finapp. Backup automático: 4 arquivos, subpasta "Backup Mesasapp". Ícone
+  novo do usuário. Cópia da pasta antes de puxar do GitHub:
+  `C:\Projetos\Mesasapp_backup_2026-11-24.zip`; ícone original em
+  `C:\Projetos\Mesasapp_icone_original.zip`.
