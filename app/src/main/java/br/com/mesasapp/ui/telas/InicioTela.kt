@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +34,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.mesasapp.domain.Catalogo
+import br.com.mesasapp.domain.Cor
+import br.com.mesasapp.domain.Material
+import br.com.mesasapp.domain.Modelo
+import br.com.mesasapp.domain.Peca
 import br.com.mesasapp.domain.Pedido
 import br.com.mesasapp.domain.StatusPedido
 import br.com.mesasapp.domain.reservado
@@ -75,6 +81,31 @@ fun InicioTela(vm: MesasViewModel) {
     fun livres(mesa: Boolean) = visiveis.filter { it.ehMesa == mesa }.sumOf { maxOf(0, (estoque[it.id] ?: 0) - (res[it.id] ?: 0)) }
     fun total(mesa: Boolean) = visiveis.filter { it.ehMesa == mesa }.sumOf { estoque[it.id] ?: 0 }
 
+    // Separado por tipo de cadeira: tem cliente que so quer jogo sem braco, outro so com
+    // braco. Metal nao tem cadeira com braco. So aparecem os tipos com cadeira no estoque.
+    val precos by vm.precos.collectAsState()
+    val materiais = filtro.materiais()
+    val doisMateriais = materiais.size > 1
+    val tipos = buildList {
+        if (Material.PLASTICO in materiais) {
+            add(TipoCadeira(if (doisMateriais) "Plástico sem braço" else "Sem braço", Material.PLASTICO, Peca.CADEIRA))
+            add(TipoCadeira(if (doisMateriais) "Plástico com braço" else "Com braço", Material.PLASTICO, Peca.CADEIRA_BRACO))
+        }
+        if (Material.METAL in materiais) add(TipoCadeira("Metal", Material.METAL, Peca.CADEIRA))
+    }.filter { t -> Cor.entries.any { (estoque[Modelo(t.material, t.cadeira, it).id] ?: 0) > 0 } }
+
+    fun qtd(id: String, soLivres: Boolean): Int {
+        val tem = estoque[id] ?: 0
+        return if (soLivres) maxOf(0, tem - (res[id] ?: 0)) else tem
+    }
+    val tiposMesa = materiais.filter { m -> Cor.entries.any { (estoque[Modelo(m, Peca.MESA, it).id] ?: 0) > 0 } }
+    fun cadeiras(t: TipoCadeira, soLivres: Boolean) = Cor.entries.sumOf { qtd(Modelo(t.material, t.cadeira, it).id, soLivres) }
+    // Jogo = 1 mesa + N cadeiras do mesmo material e cor (N do Estoque, por cor).
+    fun jogos(t: TipoCadeira, soLivres: Boolean) = Cor.entries.sumOf { cor ->
+        val cpm = precos.cadeirasPorMesa(t.material, cor).coerceAtLeast(1)
+        minOf(qtd(Modelo(t.material, Peca.MESA, cor).id, soLivres), qtd(Modelo(t.material, t.cadeira, cor).id, soLivres) / cpm)
+    }
+
     val agenda = buildList {
         peds.forEach { o ->
             if (o.entrega == hoje && o.status == StatusPedido.CONFIRMADO) add(true to o)
@@ -99,9 +130,25 @@ fun InicioTela(vm: MesasViewModel) {
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Indicador("Mesas livres hoje", livres(true).toString(), "de ${total(true)} no estoque", Modifier.weight(1f))
-                Indicador("Cadeiras livres hoje", livres(false).toString(), "de ${total(false)} no estoque", Modifier.weight(1f))
+            // Jogo precisa de mesa e cadeira do mesmo material no estoque.
+            val tiposJogo = tipos.filter { it.material in tiposMesa }
+            if (tiposJogo.isNotEmpty()) {
+                QuadroJogos(tiposJogo.map { Triple(it.rotulo, jogos(it, true), jogos(it, false)) })
+            }
+            // Mesma altura nos dois quadros, mesmo com a divisao por tipo so no das cadeiras.
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Indicador(
+                    "Mesas livres hoje", livres(true).toString(), "de ${total(true)} no estoque", Modifier.weight(1f).fillMaxHeight(),
+                    // Mesa nao tem braco: divide so por material, e so se houver mais de um.
+                    detalhes = if (tiposMesa.size > 1) tiposMesa.map { m ->
+                        m.rotulo to Cor.entries.sumOf { qtd(Modelo(m, Peca.MESA, it).id, true) }.toString()
+                    } else emptyList()
+                )
+                Indicador(
+                    "Cadeiras livres hoje", livres(false).toString(), "de ${total(false)} no estoque", Modifier.weight(1f).fillMaxHeight(),
+                    // Com um tipo so, a divisao repetiria o numero de cima.
+                    detalhes = if (tipos.size > 1) tipos.map { it.rotulo to cadeiras(it, true).toString() } else emptyList()
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Indicador("Entregas hoje", agenda.count { it.first }.toString(), null, Modifier.weight(1f))
@@ -163,11 +210,44 @@ fun InicioTela(vm: MesasViewModel) {
     }
 }
 
+private data class TipoCadeira(val rotulo: String, val material: Material, val cadeira: Peca)
+
+/**
+ * Largura inteira: uma linha por tipo de cadeira (livres hoje / no estoque). As linhas
+ * nao se somam: as mesas sao as mesmas, cada uma diz quantos jogos daquele tipo cabem.
+ */
 @Composable
-private fun Indicador(rotulo: String, valor: String, rodape: String?, modifier: Modifier) {
+private fun QuadroJogos(linhas: List<Triple<String, Int, Int>>) {
+    Cartao(Modifier.fillMaxWidth(), PaddingValues(horizontal = 16.dp, vertical = 14.dp), espaco = 0.dp, borda = BorderStroke(1.dp, Cores.Borda)) {
+        T("Jogos disponíveis hoje", 12.sp, 400, Cores.Suave)
+        linhas.forEach { (nome, livres, total) ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                T(nome, 14.sp, 600, modifier = Modifier.weight(1f))
+                Numero(livres.toString(), 24.sp)
+                T(" de $total", 12.sp, 400, Cores.Suave, Modifier.padding(start = 4.dp))
+            }
+        }
+        if (linhas.size > 1) {
+            T("As mesas são as mesmas para todos os tipos: os números não se somam.", 11.sp, 400, Cores.Suave, Modifier.padding(top = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun Indicador(rotulo: String, valor: String, rodape: String?, modifier: Modifier, detalhes: List<Pair<String, String>> = emptyList()) {
     Cartao(modifier, PaddingValues(horizontal = 16.dp, vertical = 14.dp), espaco = 0.dp, borda = BorderStroke(1.dp, Cores.Borda)) {
         T(rotulo, 12.sp, 400, Cores.Suave)
         Numero(valor, 30.sp, modifier = Modifier.padding(top = 6.dp))
         if (rodape != null) T(rodape, 12.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
+        if (detalhes.isNotEmpty()) {
+            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                detalhes.forEach { (nome, n) ->
+                    Row {
+                        T(nome, 12.sp, 400, Cores.Suave, Modifier.weight(1f), umaLinha = true)
+                        T(n, 12.sp, 600, Cores.Texto2)
+                    }
+                }
+            }
+        }
     }
 }

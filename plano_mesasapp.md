@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-18. Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-24. Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -26,6 +26,15 @@ visual, texto ou fluxo, **o protótipo manda**.
   com elas ligadas os campos aparecem no Novo pedido. Desligar zera o valor digitado.
 - Abas: **Início, Pedidos, Novo, Agenda, Estoque**. Detalhe do pedido, Preços e
   Config. Pix abrem por cima (o voltar do Android volta).
+- **Início** (2026-11-24): abaixo da saudação, quadro "Jogos disponíveis hoje" na
+  largura toda, com uma linha por tipo de cadeira (Plástico sem braço, Plástico com braço,
+  Metal; só "Sem braço"/"Com braço" com o filtro em Plástico), cada uma "livres de total".
+  As linhas **não se somam** (as mesas são as mesmas) — frase avisando no quadro. Jogo =
+  1 mesa + N cadeiras do mesmo material e cor, N de "Cadeiras por mesa" do Estoque. A linha
+  "Plástico sem braço" bate com os jogos completos do Estoque. Quadros "Mesas livres" e
+  "Cadeiras livres" com a divisão embaixo (mesas por material; cadeiras por tipo), de mesma
+  altura. **Só aparece o material/tipo que existe no estoque** (qualquer cor); jogo exige
+  mesa e cadeira do mesmo material. Divisão só quando há mais de um tipo.
 - **Novo** (refinado pelo usuário em 2026-11-18, mais enxuto que o protótipo):
   - **Cliente**: só o campo nome (sem rótulo) + botão "Contato e endereço" que abre
     tela cheia com WhatsApp, CPF/CNPJ, endereço e referência. **Só o nome é
@@ -212,6 +221,11 @@ mão do usuário e os toques caem no que ele estiver usando.
 ## 10. Combinados de trabalho
 
 - **Git e GitHub só quando o usuário pedir** (desde 2026-11-18). Testes também só quando ele pedir.
+- **Desde 2026-11-24 ele confere direto no Moto G73, que tem dados reais.** A cada
+  alteração: compilar, ler a versão do banco no aparelho (`run-as br.com.mesasapp.debug od
+  -A n -t u1 -j 60 -N 4 databases/mesasapp.db` → tem que dar 3) e só então `install -r`.
+  Nunca desinstalar, limpar dados nem mudar schema/versão do banco sem explicar antes.
+  Pacote do debug: `br.com.mesasapp.debug`.
 - **Emulador liberado** (2026-11-18): AVD `Moto_G73_5G`, testar nele primeiro e
   depois instalar no Moto G73 por Wi-Fi. Script de toques/fotos usado na sessão:
   `adb shell input tap/text`, `uiautomator dump`, `screencap`. Cuidado: com o teclado
@@ -254,4 +268,8 @@ mão do usuário e os toques caem no que ele estiver usando.
   vermelho (`Cores.Erro`) o campo do nome e/ou o botão "Adicionar ao pedido" e leva até o
   primeiro que falta (nome com foco e teclado). Detalhe: linhas de sinal e caução seguem o
   menu Exibir (aparecem mesmo desligadas se o pedido tiver valor gravado); "Forma de
-  pagamento" em linha própria, sempre visível. Ainda sem commit.
+  pagamento" em linha própria, sempre visível. Commit `028238b`, marcado
+  `antes-inicio-jogos` (ponto de volta da tela Início, a pedido do usuário).
+- **2026-11-24** — Início: quadro de jogos disponíveis hoje por tipo de cadeira e divisão
+  por material/tipo nos quadros de mesas e cadeiras. Se o usuário não gostar, voltar
+  `InicioTela.kt` para a marca `antes-inicio-jogos`.
