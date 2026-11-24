@@ -40,12 +40,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -89,6 +96,7 @@ import br.com.mesasapp.ui.theme.Cores
 import br.com.mesasapp.util.Datas
 import br.com.mesasapp.util.formatAsBrl
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 fun diariasTexto(d: Int) = "$d " + if (d == 1) "diária" else "diárias"
 
@@ -116,12 +124,23 @@ fun NovoTela(vm: MesasViewModel) {
     fun livre(id: String) = (estoque[id] ?: 0) - (res[id] ?: 0)
     val cpm = precos.cadeirasPorMesa(item.mesaId)
     val qtd = vm.qtdItem.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    val rolagem = rememberScrollState()
+    val focoCliente = remember { FocusRequester() }
+    val teclado = LocalSoftwareKeyboardController.current
+    val escopo = rememberCoroutineScope()
+    var nomeFaltando by remember { mutableStateOf(false) }
+    val verItens = remember { BringIntoViewRequester() }
+    val focos = LocalFocusManager.current
+    val semItens = c.mesas + c.cadeiras == 0
+    var itensFaltando by remember { mutableStateOf(false) }
+    // Some sozinho assim que entra o primeiro item.
+    val erroItens = itensFaltando && semItens
 
     if (vm.dadosClienteAbertos) DadosClienteDialogo(vm)
 
     Column(Modifier.fillMaxSize()) {
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("lista_novo")
+            Modifier.weight(1f).verticalScroll(rolagem).testTag("lista_novo")
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -134,9 +153,15 @@ fun NovoTela(vm: MesasViewModel) {
                 }
                 // Sem o rotulo "Nome": o texto de exemplo dentro do campo ja diz o que vai ali.
                 CampoBase(
-                    f.cliente, { vm.mudarForm(f.copy(cliente = it)) },
-                    Modifier.fillMaxWidth().testTag("campo_cliente"), placeholder = "Nome do cliente"
+                    f.cliente,
+                    {
+                        if (it.isNotBlank()) nomeFaltando = false
+                        vm.mudarForm(f.copy(cliente = it))
+                    },
+                    Modifier.fillMaxWidth().focusRequester(focoCliente).testTag("campo_cliente"),
+                    placeholder = "Nome do cliente", erro = nomeFaltando
                 )
+                if (nomeFaltando) T("Informe o nome do cliente", 12.sp, 600, Cores.Erro)
             }
 
             Cartao {
@@ -176,7 +201,13 @@ fun NovoTela(vm: MesasViewModel) {
                     )
                     BotaoPasso("+", "Aumentar quantidade", { vm.qtdItem = (qtd + 1).toString() }, Modifier.testTag("mais_qtd"))
                 }
-                Botao("Adicionar ao pedido", { vm.adicionarItem() }, Modifier.fillMaxWidth().testTag("botao_adicionar"), estilo = EstiloBotao.SUAVE)
+                Column(Modifier.bringIntoViewRequester(verItens), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Botao(
+                        "Adicionar ao pedido", { vm.adicionarItem() }, Modifier.fillMaxWidth().testTag("botao_adicionar"),
+                        estilo = EstiloBotao.SUAVE, erro = erroItens
+                    )
+                    if (erroItens) T("Adicione pelo menos um item ao pedido", 12.sp, 600, Cores.Erro)
+                }
 
                 val linhas = f.linhas(precos)
                 if (linhas.isNotEmpty()) {
@@ -250,7 +281,25 @@ fun NovoTela(vm: MesasViewModel) {
             // Sem rodape fixo: o botao fica no fim do formulario e abre o resumo.
             Botao(
                 "Confirmar pedido · " + c.totalCentavos.formatAsBrl(),
-                { vm.msg = null; vm.resumoAberto = true },
+                {
+                    vm.msg = null
+                    // Faltando nome ou item, o resumo nem abre: marca em vermelho o que falta
+                    // e leva ate o primeiro (nome antes, depois o botao de adicionar).
+                    if (f.cliente.isBlank()) nomeFaltando = true
+                    if (semItens) itensFaltando = true
+                    if (f.cliente.isBlank()) {
+                        escopo.launch {
+                            rolagem.animateScrollTo(0)
+                            focoCliente.requestFocus()
+                            teclado?.show()
+                        }
+                    } else if (semItens) {
+                        focos.clearFocus()
+                        escopo.launch { verItens.bringIntoView() }
+                    } else {
+                        vm.resumoAberto = true
+                    }
+                },
                 Modifier.fillMaxWidth().testTag("botao_resumo"), altura = 52.dp, tamanho = 15.sp
             )
         }

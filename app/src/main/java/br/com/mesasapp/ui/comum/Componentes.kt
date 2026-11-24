@@ -184,6 +184,7 @@ fun CampoBase(
     peso: Int = 400,
     alinhar: TextAlign = TextAlign.Start,
     paddingH: Dp = 14.dp,
+    erro: Boolean = false,
     aoFocar: (Boolean) -> Unit = {}
 ) {
     var focado by remember { mutableStateOf(false) }
@@ -205,7 +206,12 @@ fun CampoBase(
                     .height(altura)
                     .clip(forma)
                     .background(Cores.Superficie)
-                    .border(if (focado) 2.dp else 1.dp, if (focado) Cores.Destaque else Cores.BordaCampo, forma)
+                    // O erro vence o foco: o campo continua vermelho com o cursor dentro.
+                    .border(
+                        if (focado || erro) 2.dp else 1.dp,
+                        if (erro) Cores.Erro else if (focado) Cores.Destaque else Cores.BordaCampo,
+                        forma
+                    )
                     .padding(horizontal = paddingH),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -295,22 +301,25 @@ fun Botao(
     estilo: EstiloBotao = EstiloBotao.PRIMARIO,
     tamanho: TextUnit = 14.sp,
     raio: Dp = 12.dp,
+    erro: Boolean = false,
     icone: (@Composable RowScope.() -> Unit)? = null
 ) {
     val forma = RoundedCornerShape(raio)
-    val (fundo, cor, borda) = when (estilo) {
+    val (fundo, cor, bordaEstilo) = when (estilo) {
         EstiloBotao.PRIMARIO -> Triple(Cores.Verde, Cores.SobreVerde, null)
         EstiloBotao.CONTORNO -> Triple(Cores.Superficie, Cores.Destaque, Cores.Destaque)
         EstiloBotao.SUAVE -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Destaque)
         EstiloBotao.SUAVE_SEM_BORDA -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, null)
         EstiloBotao.NEUTRO -> Triple(Cores.Superficie, Cores.Texto, Cores.BordaCampo)
     }
+    // Erro: borda vermelha mais grossa, para apontar o passo que faltou.
+    val borda = if (erro) Cores.Erro else bordaEstilo
     Row(
         modifier
             .height(altura)
             .clip(forma)
             .then(if (estilo == EstiloBotao.PRIMARIO) Modifier.background(Cores.GradienteVerde) else Modifier.background(fundo))
-            .then(if (borda != null) Modifier.border(1.dp, borda, forma) else Modifier)
+            .then(if (borda != null) Modifier.border(if (erro) 2.dp else 1.dp, borda, forma) else Modifier)
             .clickable(role = Role.Button, onClick = aoTocar)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),

@@ -49,6 +49,8 @@ data class Paleta(
     val abas: Color,
     val laranja: Color,
     val laranjaClaro: Color,
+    /** Borda e texto de campo obrigatorio nao preenchido. */
+    val erro: Color,
     val azul: Color,
     val azulClaro: Color,
     val pontoEntrega: Color,
@@ -94,6 +96,7 @@ val PaletaClara = Paleta(
     abas = Color(0xFFE6EAE8),
     laranja = Color(0xFF9A3412),
     laranjaClaro = Color(0xFFFDEDE3),
+    erro = Color(0xFFD32F2F),
     azul = Color(0xFF1E40AF),
     azulClaro = Color(0xFFE7EEFD),
     pontoEntrega = Color(0xFF1D4ED8),
@@ -136,6 +139,7 @@ val PaletaEscura = Paleta(
     abas = Color(0xFF222A28),
     laranja = Color(0xFFF2A57E),
     laranjaClaro = Color(0xFF3A2218),
+    erro = Color(0xFFFF8A80),
     azul = Color(0xFF9DB6F5),
     azulClaro = Color(0xFF1C2A4D),
     pontoEntrega = Color(0xFF6B8EF0),
@@ -182,6 +186,7 @@ object Cores {
     val Abas @Composable @ReadOnlyComposable get() = p.abas
     val Laranja @Composable @ReadOnlyComposable get() = p.laranja
     val LaranjaClaro @Composable @ReadOnlyComposable get() = p.laranjaClaro
+    val Erro @Composable @ReadOnlyComposable get() = p.erro
     val Azul @Composable @ReadOnlyComposable get() = p.azul
     val AzulClaro @Composable @ReadOnlyComposable get() = p.azulClaro
     val PontoEntrega @Composable @ReadOnlyComposable get() = p.pontoEntrega

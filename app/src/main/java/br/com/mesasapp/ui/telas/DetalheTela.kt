@@ -79,6 +79,7 @@ import br.com.mesasapp.util.formatAsBrl
 fun DetalheTela(vm: MesasViewModel) {
     val pedidos by vm.pedidos.collectAsState()
     val pixCfg by vm.pix.collectAsState()
+    val exibir by vm.pagamento.collectAsState()
     val contexto = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val o = pedidos.firstOrNull { it.id == vm.pedidoSelecionado }
@@ -94,6 +95,10 @@ fun DetalheTela(vm: MesasViewModel) {
         val c = o.conta
         val editavel = o.status == StatusPedido.ENTREGUE
         val fec = fechamento(o, vm.quebradas, vm.faltando, vm.atraso)
+        // Seguem o menu > Exibir. Valor ja gravado continua visivel mesmo com a chave
+        // desligada: ele entra no saldo e, escondido, a conta nao fecharia na tela.
+        val mostraSinal = exibir.mostrarSinal || o.sinalCentavos > 0
+        val mostraCaucao = exibir.mostrarCaucao || o.caucaoCentavos > 0
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f)) {
@@ -145,8 +150,10 @@ fun DetalheTela(vm: MesasViewModel) {
                 Tracejado()
                 LinhaValor("Total do aluguel", c.totalCentavos.formatAsBrl(), Modifier.padding(top = 6.dp), 14.sp, 600, Cores.Texto)
             }
-            LinhaValor("Sinal pago (${o.pagamento})", o.sinalCentavos.formatAsBrl())
-            LinhaValor("Caução recebida", o.caucaoCentavos.formatAsBrl())
+            // A forma de pagamento aparece sempre, com ou sem sinal e caucao.
+            LinhaValor("Forma de pagamento", o.pagamento)
+            if (mostraSinal) LinhaValor("Sinal pago", o.sinalCentavos.formatAsBrl())
+            if (mostraCaucao) LinhaValor("Caução recebida", o.caucaoCentavos.formatAsBrl())
         }
 
         if (o.status == StatusPedido.ENTREGUE || o.status == StatusPedido.DEVOLVIDO) {
@@ -192,7 +199,14 @@ fun DetalheTela(vm: MesasViewModel) {
                 LinhaValor("+ Avarias e faltas", fec.avariasCentavos.formatAsBrl())
                 LinhaValor("+ Atraso na devolução", fec.atrasoCentavos.formatAsBrl())
                 LinhaValor("Novo total", fec.finalCentavos.formatAsBrl(), tamanho = 14.sp, peso = 600, cor = Cores.Texto)
-                LinhaValor("− Sinal e caução já recebidos", "− " + fec.abatidoCentavos.formatAsBrl())
+                if (mostraSinal || mostraCaucao) {
+                    val rotulo = when {
+                        mostraSinal && mostraCaucao -> "− Sinal e caução já recebidos"
+                        mostraSinal -> "− Sinal já recebido"
+                        else -> "− Caução já recebida"
+                    }
+                    LinhaValor(rotulo, "− " + fec.abatidoCentavos.formatAsBrl())
+                }
                 Column {
                     Tracejado()
                     Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {

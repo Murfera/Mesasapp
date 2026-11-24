@@ -142,7 +142,17 @@ quando o cliente paga** — baixa manual.
    Rodar e ajustar **só quando o usuário pedir**.
 
 1. **Multiplicar pelas diárias?** (`MULTIPLICAR_POR_DIAS`) — decisão dele.
-2. **Escolher hora de entrega/retirada** na tela (o banco já guarda a hora).
+2. **Horário de entrega/retirada** — ideia do usuário em 2026-11-24, **deixada de canto a
+   pedido dele** ("depois eu penso"). Lembrar quando ele pedir pendências/ideias. O que foi
+   conversado: dois campos de hora dentro do cartão Datas do Novo pedido; chave "Horário" no
+   menu ⋮ → Exibir (desligada por padrão = 08:00/18:00 como hoje); mostrar a hora no detalhe
+   do pedido, na mensagem do Pix no WhatsApp e no evento do Google Agenda, só com a chave
+   ligada. **Decisão em aberto:** estoque continua contando o dia da retirada inteiro
+   (recomendado: tempo de buscar/conferir) ou passa a usar a hora exata. O banco já guarda a
+   hora (`inicioEpochSeg`/`fimEpochSeg`), não precisa mudar o schema.
+7. **Cobrar com Pix com o sinal desligado**: os botões "Sinal (50%)" e "Saldo (total −
+   sinal)" ainda aparecem. Perguntado em 2026-11-24 se esconde o de sinal e troca o outro
+   por "Total"; sem resposta ainda.
 3. Bloquear jogo com mesa de um material e cadeira de outro (hoje vale a mesa).
 4. Cadastrar o estoque real e conferir o cálculo no celular (com o usuário).
 5. Backup em JSON, no modelo do Finapp; migração de verdade do banco antes de publicar.
@@ -238,3 +248,10 @@ mão do usuário e os toques caem no que ele estiver usando.
   Novo pedido enxuto (contato num botão, cartões por cor, painel de resumo, só nome
   obrigatório), menu Exibir (sinal/caução), títulos menores, degradê verde, fundos e
   cartões "gelo" no Estoque. A partir daqui: **Git, GitHub e testes só quando ele pedir**.
+- **2026-11-24** — o usuário passou a conferir direto no celular, que já tem dados reais:
+  reinstalar com `install -r` após checar que o banco do aparelho está na versão 3, nunca
+  apagar dados. Novo pedido: Confirmar sem nome ou sem item não abre o resumo; marca em
+  vermelho (`Cores.Erro`) o campo do nome e/ou o botão "Adicionar ao pedido" e leva até o
+  primeiro que falta (nome com foco e teclado). Detalhe: linhas de sinal e caução seguem o
+  menu Exibir (aparecem mesmo desligadas se o pedido tiver valor gravado); "Forma de
+  pagamento" em linha própria, sempre visível. Ainda sem commit.
