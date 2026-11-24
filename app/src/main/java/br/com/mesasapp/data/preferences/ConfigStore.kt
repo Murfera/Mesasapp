@@ -15,6 +15,7 @@ import br.com.mesasapp.domain.Material
 import br.com.mesasapp.domain.PrecoPeca
 import br.com.mesasapp.domain.Precos
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "config")
@@ -24,6 +25,18 @@ enum class TemaApp(val rotulo: String) {
     SISTEMA("Automático"),
     CLARO("Claro"),
     ESCURO("Escuro")
+}
+
+/**
+ * Menu > Privacidade: se o app pede desbloqueio ao abrir, e de que jeito.
+ *
+ * De proposito fora do backup (ver restaurarConfig): restaurar num aparelho
+ * sem digital cadastrada ligaria uma trava impossivel de abrir ali.
+ */
+enum class ModoPrivacidade(val rotulo: String) {
+    NENHUM("Sem senha"),
+    DISPOSITIVO("Senha do celular"),
+    BIOMETRIA("Digital")
 }
 
 /** Menu > Config. pagamento: campos opcionais do Novo pedido. Desligados por padrao. */
@@ -49,6 +62,10 @@ class ConfigStore(private val context: Context) {
     private val TEMA = stringPreferencesKey("tema")
     private val MOSTRAR_SINAL = booleanPreferencesKey("mostrar_sinal")
     private val MOSTRAR_CAUCAO = booleanPreferencesKey("mostrar_caucao")
+    private val BACKUP_AUTO = booleanPreferencesKey("backup_automatico")
+    private val BACKUP_PASTA = stringPreferencesKey("backup_pasta_uri")
+    private val BACKUP_ULTIMO = longPreferencesKey("backup_ultimo_em")
+    private val PRIVACIDADE = stringPreferencesKey("privacidade")
 
     val precos: Flow<Precos> = context.dataStore.data.map { p ->
         val padrao = Precos()
@@ -91,6 +108,16 @@ class ConfigStore(private val context: Context) {
 
     suspend fun definirTema(t: TemaApp) = context.dataStore.edit { it[TEMA] = t.name }
 
+    // --- privacidade (menu > Privacidade) ---
+
+    val privacidade: Flow<ModoPrivacidade> = context.dataStore.data.map { p ->
+        p[PRIVACIDADE]?.let { nome -> ModoPrivacidade.entries.firstOrNull { it.name == nome } }
+            ?: ModoPrivacidade.NENHUM
+    }
+
+    suspend fun definirPrivacidade(m: ModoPrivacidade) =
+        context.dataStore.edit { it[PRIVACIDADE] = m.name }
+
     val pagamento: Flow<OpcoesPagamento> = context.dataStore.data.map { p ->
         OpcoesPagamento(p[MOSTRAR_SINAL] ?: false, p[MOSTRAR_CAUCAO] ?: false)
     }
@@ -101,4 +128,62 @@ class ConfigStore(private val context: Context) {
     }
 
     suspend fun definirFiltro(f: FiltroMaterial) = context.dataStore.edit { it[FILTRO] = f.name }
+
+    // --- backup (menu > Backup) ---
+
+    val backupAutomatico: Flow<Boolean> = context.dataStore.data.map { it[BACKUP_AUTO] ?: false }
+
+    val backupPasta: Flow<String?> = context.dataStore.data.map { it[BACKUP_PASTA] }
+
+    val backupUltimoEm: Flow<Long?> = context.dataStore.data.map { it[BACKUP_ULTIMO] }
+
+    /** Leitura pontual, para quem roda fora da tela (o worker do backup diario). */
+    suspend fun backupPastaUri(): String? = backupPasta.first()
+
+    suspend fun definirBackupAutomatico(ligado: Boolean) =
+        context.dataStore.edit { it[BACKUP_AUTO] = ligado }
+
+    suspend fun definirBackupPasta(uri: String) =
+        context.dataStore.edit { it[BACKUP_PASTA] = uri }
+
+    suspend fun definirBackupUltimoEm(millis: Long) =
+        context.dataStore.edit { it[BACKUP_ULTIMO] = millis }
+
+    /** Leitura pontual dos precos, do Pix e do Exibir, para montar o backup. */
+    suspend fun precosAgora(): Precos = precos.first()
+    suspend fun pixAgora(): PixConfig = pix.first()
+    suspend fun pagamentoAgora(): OpcoesPagamento = pagamento.first()
+
+    /**
+     * Grava de uma vez a configuracao que veio de um backup.
+     *
+     * Uma unica edicao, e nao uma por campo: assim as telas nao recalculam a
+     * cada preco restaurado, e nao existe instante com metade da tabela nova e
+     * metade da antiga.
+     *
+     * As chaves ausentes no arquivo sao apagadas, nao mantidas: o que vale e o
+     * backup, senao um preco antigo sobreviveria a restauracao.
+     */
+    suspend fun restaurarConfig(p: Precos, pixConfig: PixConfig, op: OpcoesPagamento) {
+        context.dataStore.edit { prefs ->
+            p.tabela.forEach { (chave, preco) ->
+                prefs[diaria(chave)] = preco.diariaCentavos
+                prefs[reposicao(chave)] = preco.reposicaoCentavos
+            }
+            prefs[DESC_JOGO] = p.descontoJogoCentavos
+            prefs[FRETE] = p.fretePadraoCentavos
+
+            Material.entries.flatMap { m -> Cor.entries.map { c -> Precos.chaveCadeiras(m, c) } }
+                .forEach { chave ->
+                    val n = p.cadeirasPorMesa[chave]
+                    if (n != null && n > 0) prefs[cadeiras(chave)] = n else prefs.remove(cadeiras(chave))
+                }
+
+            prefs[PIX_CHAVE] = pixConfig.chave
+            prefs[PIX_NOME] = pixConfig.nome
+            prefs[PIX_CIDADE] = pixConfig.cidade
+            prefs[MOSTRAR_SINAL] = op.mostrarSinal
+            prefs[MOSTRAR_CAUCAO] = op.mostrarCaucao
+        }
+    }
 }

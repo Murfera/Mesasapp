@@ -1,6 +1,7 @@
 package br.com.mesasapp.di
 
 import android.content.Context
+import br.com.mesasapp.data.backup.BackupRepository
 import br.com.mesasapp.data.local.EstoqueEntity
 import br.com.mesasapp.data.local.LinhaEntity
 import br.com.mesasapp.data.local.MesasappDatabase
@@ -41,6 +42,16 @@ class Repositorio(context: Context) {
  * telas. Sem Hilt, para nao carregar mais uma camada de build (mesma decisao do Finapp).
  */
 class AppContainer(context: Context) {
-    val repositorio = Repositorio(context)
-    val configStore = ConfigStore(context.applicationContext)
+    /** Context da Application: usado pelo backup (seletor de pasta, WorkManager). */
+    val appContext: Context = context.applicationContext
+
+    val repositorio = Repositorio(appContext)
+    val configStore = ConfigStore(appContext)
+
+    /** O banco e singleton: obter de novo aqui devolve a mesma instancia. */
+    val backupRepository = BackupRepository(
+        context = appContext,
+        dao = MesasappDatabase.obter(appContext).dao(),
+        config = configStore
+    )
 }

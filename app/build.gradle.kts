@@ -93,6 +93,15 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
 
+    // Backup automatico: WorkManager agenda a tarefa diaria e documentfile
+    // escreve na pasta que o usuario escolheu, sem permissao de armazenamento.
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.documentfile)
+
+    // Menu > Privacidade. Quem guarda e confere a senha e a digital e o
+    // Android: esta biblioteca so faz a pergunta e recebe sim ou nao.
+    implementation(libs.androidx.biometric)
+
     // Geracao do QR Code do Pix, offline. Nenhuma chamada de rede.
     implementation(libs.zxing.core)
 

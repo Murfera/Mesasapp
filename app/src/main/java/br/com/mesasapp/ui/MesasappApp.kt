@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.DropdownMenu
@@ -59,6 +61,7 @@ import br.com.mesasapp.domain.FiltroMaterial
 import br.com.mesasapp.ui.comum.Divisor
 import br.com.mesasapp.ui.comum.T
 import br.com.mesasapp.ui.telas.AgendaTela
+import br.com.mesasapp.ui.telas.BackupTela
 import br.com.mesasapp.ui.telas.ConfigPagamentoTela
 import br.com.mesasapp.ui.telas.ConfigPixTela
 import br.com.mesasapp.ui.telas.DetalheTela
@@ -67,6 +70,7 @@ import br.com.mesasapp.ui.telas.InicioTela
 import br.com.mesasapp.ui.telas.NovoTela
 import br.com.mesasapp.ui.telas.PedidosTela
 import br.com.mesasapp.ui.telas.PrecosTela
+import br.com.mesasapp.ui.telas.PrivacidadeTela
 import br.com.mesasapp.ui.theme.Cores
 import br.com.mesasapp.ui.theme.SpaceGrotesk
 
@@ -84,7 +88,7 @@ private val ABAS = listOf(
 fun MesasappApp(container: AppContainer) {
     val vm: MesasViewModel = viewModel(factory = MesasViewModel.Fabrica(container))
 
-    BackHandler(enabled = vm.tela == Tela.DETALHE || vm.tela == Tela.PRECOS || vm.tela == Tela.PIX || vm.tela == Tela.PAGAMENTO) { vm.voltar() }
+    BackHandler(enabled = vm.voltaPossivel) { vm.voltar() }
 
     Column(
         Modifier
@@ -105,6 +109,8 @@ fun MesasappApp(container: AppContainer) {
                 Tela.PRECOS -> PrecosTela(vm)
                 Tela.PIX -> ConfigPixTela(vm)
                 Tela.PAGAMENTO -> ConfigPagamentoTela(vm)
+                Tela.BACKUP -> BackupTela(vm)
+                Tela.PRIVACIDADE -> PrivacidadeTela(vm)
             }
         }
         BarraDeAbas(vm)
@@ -164,6 +170,8 @@ private fun Menu(vm: MesasViewModel, filtro: FiltroMaterial) {
         ItemMenu(Icons.Outlined.LocalOffer, "Preços", null, Modifier.testTag("menu_precos")) { vm.abrirDoMenu(Tela.PRECOS) }
         ItemMenu(Icons.Outlined.QrCode2, "Config. Pix", null, Modifier.testTag("menu_pix")) { vm.abrirDoMenu(Tela.PIX) }
         ItemMenu(Icons.Outlined.Payments, "Exibir", null, Modifier.testTag("menu_pagamento")) { vm.abrirDoMenu(Tela.PAGAMENTO) }
+        ItemMenu(Icons.Outlined.Backup, "Backup", null, Modifier.testTag("menu_backup")) { vm.abrirDoMenu(Tela.BACKUP) }
+        ItemMenu(Icons.Outlined.Lock, "Privacidade", null, Modifier.testTag("menu_privacidade")) { vm.abrirDoMenu(Tela.PRIVACIDADE) }
         Divisor(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), Cores.Borda)
         ItemMenu(Icons.Outlined.DarkMode, "Tema", tema.rotulo, Modifier.testTag("menu_tema"), vm.menuTemaAberto) {
             vm.menuTemaAberto = !vm.menuTemaAberto

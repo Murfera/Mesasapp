@@ -54,6 +54,52 @@ interface MesasDao {
         return id
     }
 
+    // --- backup ---
+
+    @Query("SELECT * FROM estoque ORDER BY modeloId")
+    suspend fun todoEstoque(): List<EstoqueEntity>
+
+    @Transaction
+    @Query("SELECT * FROM pedido ORDER BY id")
+    suspend fun todosPedidos(): List<PedidoComItens>
+
+    @Query("DELETE FROM estoque")
+    suspend fun apagarEstoque()
+
+    /** As linhas e as pecas saem junto, pela chave estrangeira em CASCADE. */
+    @Query("DELETE FROM pedido")
+    suspend fun apagarPedidos()
+
+    @Insert
+    suspend fun inserirPedidos(p: List<PedidoEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun gravarEstoques(e: List<EstoqueEntity>)
+
+    /**
+     * Restauracao: substitui estoque e pedidos pelo conteudo do backup.
+     *
+     * E substituicao, nao mesclagem: os numeros de pedido vem do arquivo e
+     * mesclar criaria duplicatas ou colisoes silenciosas. Tudo numa transacao —
+     * se qualquer passo falhar, o banco volta ao estado anterior em vez de ficar
+     * meio importado.
+     */
+    @Transaction
+    suspend fun restaurar(
+        estoque: List<EstoqueEntity>,
+        pedidos: List<PedidoEntity>,
+        linhas: List<LinhaEntity>,
+        pecas: List<PecaEntity>
+    ) {
+        apagarPedidos()
+        apagarEstoque()
+        gravarEstoques(estoque)
+        // Pedidos antes das linhas e pecas: elas apontam para ele.
+        inserirPedidos(pedidos)
+        inserirLinhas(linhas)
+        inserirPecas(pecas)
+    }
+
     /**
      * Devolucao: grava a vistoria, fecha o pedido com o total final e tira do
      * estoque o que quebrou ou nao voltou. Tudo junto ou nada.

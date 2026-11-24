@@ -1,11 +1,16 @@
 package br.com.mesasapp.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import br.com.mesasapp.data.backup.AutoBackupScheduler
+import br.com.mesasapp.data.backup.BackupFormatException
+import br.com.mesasapp.data.preferences.ModoPrivacidade
 import br.com.mesasapp.data.preferences.OpcoesPagamento
 import br.com.mesasapp.data.preferences.PixConfig
 import br.com.mesasapp.data.preferences.TemaApp
@@ -33,7 +38,13 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class Tela { INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX, PAGAMENTO }
+enum class Tela {
+    INICIO, PEDIDOS, NOVO, AGENDA, ESTOQUE, DETALHE, PRECOS, PIX, PAGAMENTO, BACKUP, PRIVACIDADE
+}
+
+/** Telas que abrem por cima, pelo menu dos tres pontinhos, e voltam para a anterior. */
+private val TELAS_DO_MENU =
+    setOf(Tela.PRECOS, Tela.PIX, Tela.PAGAMENTO, Tela.BACKUP, Tela.PRIVACIDADE)
 
 data class Mensagem(val ok: Boolean, val texto: String)
 
@@ -82,12 +93,15 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
 
     private val repo = container.repositorio
     private val config = container.configStore
+    private val backup = container.backupRepository
 
     val estoque: StateFlow<Map<String, Int>> = repo.estoque().stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
     val precos: StateFlow<Precos> = config.precos.stateIn(viewModelScope, SharingStarted.Eagerly, Precos())
     val pix: StateFlow<PixConfig> = config.pix.stateIn(viewModelScope, SharingStarted.Eagerly, PixConfig())
     val pagamento: StateFlow<OpcoesPagamento> = config.pagamento.stateIn(viewModelScope, SharingStarted.Eagerly, OpcoesPagamento())
     val tema: StateFlow<TemaApp> = config.tema.stateIn(viewModelScope, SharingStarted.Eagerly, TemaApp.SISTEMA)
+    val privacidade: StateFlow<ModoPrivacidade> =
+        config.privacidade.stateIn(viewModelScope, SharingStarted.Eagerly, ModoPrivacidade.NENHUM)
     val filtro: StateFlow<FiltroMaterial> = config.filtro.stateIn(viewModelScope, SharingStarted.Eagerly, FiltroMaterial.TODOS)
     val pedidos: StateFlow<List<Pedido>> = repo.pedidos().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -106,6 +120,27 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         menuTemaAberto = false
     }
 
+    /**
+     * Grava o modo de privacidade.
+     *
+     * Quem chama ja passou pelo desbloqueio quando era para ligar a trava: a
+     * tela confirma antes, para nao gravar uma trava que o aparelho nao abre.
+     */
+    fun definirPrivacidade(m: ModoPrivacidade) {
+        viewModelScope.launch {
+            config.definirPrivacidade(m)
+            msg = Mensagem(
+                true,
+                if (m == ModoPrivacidade.NENHUM) "O app volta a abrir sem pedir desbloqueio."
+                else "Bloqueio ligado: ${m.rotulo.lowercase()}."
+            )
+        }
+    }
+
+    fun avisar(ok: Boolean, texto: String) {
+        msg = Mensagem(ok, texto)
+    }
+
     fun irPara(t: Tela) {
         tela = t
         msg = null
@@ -113,16 +148,19 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun abrirDoMenu(t: Tela) {
-        if (tela != Tela.PRECOS && tela != Tela.PIX && tela != Tela.PAGAMENTO) telaAntesDoMenu = tela
+        if (tela !in TELAS_DO_MENU) telaAntesDoMenu = tela
         irPara(t)
     }
 
     fun voltarDoMenu() = irPara(telaAntesDoMenu)
 
+    /** O botao voltar do Android so age nas telas que abrem por cima. */
+    val voltaPossivel: Boolean get() = tela == Tela.DETALHE || tela in TELAS_DO_MENU
+
     /** Botao voltar do Android: so as telas que abrem por cima voltam. */
-    fun voltar(): Boolean = when (tela) {
-        Tela.DETALHE -> { irPara(Tela.PEDIDOS); true }
-        Tela.PRECOS, Tela.PIX, Tela.PAGAMENTO -> { voltarDoMenu(); true }
+    fun voltar(): Boolean = when {
+        tela == Tela.DETALHE -> { irPara(Tela.PEDIDOS); true }
+        tela in TELAS_DO_MENU -> { voltarDoMenu(); true }
         else -> false
     }
 
@@ -305,6 +343,106 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         if (!o.mostrarCaucao) form = form.copy(caucao = "")
     }
     fun definirPix(p: PixConfig) = viewModelScope.launch { config.definirPix(p) }
+
+    // --- backup (menu > Backup) ---
+
+    val backupAutomatico: StateFlow<Boolean> =
+        config.backupAutomatico.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val backupPasta: StateFlow<String?> =
+        config.backupPasta.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val backupUltimoEm: StateFlow<Long?> =
+        config.backupUltimoEm.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** JSON lido do arquivo, esperando a confirmacao de quem vai perder os dados atuais. */
+    var restauracaoPendente by mutableStateOf<String?>(null)
+
+    /** Nome sugerido ao salvar: datado, para varios backups conviverem na pasta. */
+    fun nomeSugeridoDoBackup(): String = AutoBackupScheduler.nomeDoArquivo()
+
+    suspend fun montarBackup(): String = backup.exportarJson()
+
+    /** Texto do arquivo escolhido: guarda para confirmar antes de substituir nada. */
+    fun prepararRestauracao(texto: String?) {
+        if (texto == null) {
+            msg = Mensagem(false, "Não foi possível abrir o arquivo.")
+            return
+        }
+        msg = null
+        restauracaoPendente = texto
+    }
+
+    fun cancelarRestauracao() { restauracaoPendente = null }
+
+    fun confirmarRestauracao() {
+        val texto = restauracaoPendente ?: return
+        restauracaoPendente = null
+        viewModelScope.launch {
+            msg = try {
+                val r = backup.restaurarDeJson(texto)
+                val pedidos = if (r.pedidos == 1) "1 pedido" else "${r.pedidos} pedidos"
+                Mensagem(
+                    true,
+                    if (r.config) "Backup restaurado: $pedidos, o estoque e os preços."
+                    else "Backup restaurado: $pedidos e o estoque."
+                )
+            } catch (e: BackupFormatException) {
+                Mensagem(false, e.message ?: "Não foi possível ler o backup.")
+            } catch (e: Exception) {
+                Mensagem(false, "Falha ao restaurar o backup.")
+            }
+        }
+    }
+
+    fun backupSalvo(ok: Boolean) {
+        msg = if (ok) Mensagem(true, "Backup salvo no arquivo escolhido.")
+        else Mensagem(false, "Não foi possível salvar o backup.")
+    }
+
+    /**
+     * Guarda a pasta, liga o agendamento e **grava um backup na hora**: sem isso
+     * o usuario ficaria dias sem saber se a escolha funcionou.
+     */
+    fun pastaEscolhida(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                container.appContext.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                config.definirBackupPasta(uri.toString())
+                config.definirBackupAutomatico(true)
+                AutoBackupScheduler.agendar(container.appContext)
+                backupAgora()
+            } catch (e: SecurityException) {
+                msg = Mensagem(false, "Não foi possível guardar o acesso a essa pasta.")
+            }
+        }
+    }
+
+    fun desligarBackupAutomatico() {
+        viewModelScope.launch {
+            config.definirBackupAutomatico(false)
+            AutoBackupScheduler.cancelar(container.appContext)
+            msg = null
+        }
+    }
+
+    fun backupAgoraNaPasta() = viewModelScope.launch { backupAgora() }
+
+    private suspend fun backupAgora() {
+        msg = if (config.backupPastaUri() == null) {
+            Mensagem(false, "Escolha uma pasta primeiro.")
+        } else {
+            try {
+                backup.gravarNaPasta()
+                Mensagem(true, "Backup salvo na pasta escolhida.")
+            } catch (e: SecurityException) {
+                Mensagem(false, "A pasta escolhida não está mais acessível. Escolha outra.")
+            } catch (e: Exception) {
+                Mensagem(false, "Falha ao salvar o backup na pasta.")
+            }
+        }
+    }
 
     // --- agenda ---
     var mesCalendario by mutableStateOf(YearMonth.now())
