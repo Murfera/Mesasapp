@@ -3,11 +3,26 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-      Nenhuma permissao declarada de proposito: o app e 100% local.
-      Isso permite declarar "nenhum dado coletado" no formulario de
+      Este arquivo nao declara nenhuma permissao de proposito: o app e 100%
+      local, o que permite declarar "nenhum dado coletado" no formulario de
       Seguranca de Dados do Play Console. Compartilhar orcamento e QR do Pix
       usa ACTION_SEND, que nao exige permissao. O backup grava na pasta que o
       usuario escolhe pelo seletor do sistema, o que tambem nao exige permissao.
+
+      O manifesto final, porem, nao fica vazio: as bibliotecas acrescentam
+      permissoes na fusao, e todas sao normais (concedidas na instalacao, sem
+      dialogo e sem acesso a dado do usuario):
+
+        - WAKE_LOCK, ACCESS_NETWORK_STATE, RECEIVE_BOOT_COMPLETED e
+          DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, de androidx.work, por causa
+          do backup diario automatico.
+        - USE_BIOMETRIC, USE_FINGERPRINT e REORDER_TASKS, de androidx.biometric,
+          por causa do bloqueio do menu > Privacidade.
+
+      Nenhuma delas coleta nem transmite nada, entao a resposta do formulario
+      continua sendo "nenhum dado coletado". Para conferir depois de mexer nas
+      dependencias:
+      app/build/outputs/logs/manifest-merger-debug-report.txt
     -->
 
     <!--
