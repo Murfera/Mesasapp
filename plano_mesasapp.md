@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-24 (fim do dia). Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-26 (fim do dia). Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -67,7 +67,17 @@ visual, texto ou fluxo, **o protótipo manda**.
   - **Valores**: frete, desconto, forma de pagamento (sinal/caução só se ligados em Exibir).
   - **Sem rodapé fixo**: botão "Confirmar pedido · R$ X" no fim abre um painel de baixo
     (resumo + "Salvar orçamento" / "Emitir pedido"; emitir = reserva estoque).
-- **Detalhe**: dados, itens e valores, vistoria (quebradas, faltando, dias de atraso)
+- **Pedidos** (2026-11-26): linha 1 = título + ‹ mês › (tocar no mês volta para hoje); linha 2 =
+  chave **Semana | Mês** (padrão **Mês**, no mês de hoje; em Semana aparecem setas ‹ 23/11 a 29/11 ›,
+  segunda a domingo); linha 3 = Orçamento, Confirmado, Entregue, Devolvido **marcáveis juntos**
+  (aparece exatamente o que está marcado; abre sem o Devolvido; não existe mais "Todos"). Entra todo
+  pedido cujo período toca a semana/o mês; ordem do começo para o fim. Cartão inteiro na cor da
+  situação: **orçamento amarelo, confirmado azul, entregue verde, devolvido cinza** (`corStatus`,
+  `fundoCartaoStatus`), filtros na mesma cor. Testado "tudo numa linha só": ele não gostou.
+- **Detalhe**: **Editar pedido / Excluir pedido no topo**. Editar só Orçamento/Confirmado (abre o Novo
+  como "Editando pedido #N", mesmo número, itens antigos com preço congelado); excluir qualquer um,
+  com confirmação. "Pedido #N · emitido em dd/MM/aaaa às HH:mm" no topo e na mensagem do Pix
+  (editar grava a hora nova). Depois: dados, itens e valores, vistoria (quebradas, faltando, dias de atraso)
   com total refeito, Google Agenda (só link), Pix (Sinal 50% / Saldo / Após vistoria
   / Outro valor, QR, copia e cola, WhatsApp) e o botão da próxima situação.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
@@ -172,7 +182,9 @@ quando o cliente paga** — baixa manual.
 ## 7. Falta / decisões em aberto
 
 0. **Os testes de interface estão desatualizados** desde o refinamento do Novo pedido
-   (campos movidos para a janela de contato, botões no painel de resumo, cartões por cor).
+   (campos movidos para a janela de contato, botões no painel de resumo, cartões por cor) e, desde
+   2026-11-26, também pela máscara de dinheiro (digitar "100" agora vale R$ 1,00), filtros de Pedidos
+   e o "Todos" que saiu.
    Rodar e ajustar **só quando o usuário pedir**.
 
 1. **Multiplicar pelas diárias?** (`MULTIPLICAR_POR_DIAS`) — decisão dele.
@@ -193,6 +205,10 @@ quando o cliente paga** — baixa manual.
 8. **Restaurar backup** ainda não foi testado no celular (só gravar). Testar com cuidado:
    restaurar **substitui** os pedidos reais do aparelho.
 6. Conferir as telas em paisagem.
+
+9. Etiquetas "Entrega"/"Retirada" da Agenda e do Início seguem azul/laranja; perguntado se
+   acompanham as cores novas das situações — sem resposta.
+10. Ideias do site Simples Agenda que ele **descartou** (2026-11-26: "se não dá para usar, ignora").
 
 Ideias para depois: contrato/recibo em PDF, fotos da entrega, relatório de
 faturamento, disponibilidade por cor no Início, itens extras (toalha, lona).
@@ -313,3 +329,34 @@ escuro sobre fundo escuro na tela de Backup.
   novo do usuário. Cópia da pasta antes de puxar do GitHub:
   `C:\Projetos\Mesasapp_backup_2026-11-24.zip`; ícone original em
   `C:\Projetos\Mesasapp_icone_original.zip`.
+- **2026-11-26** — instalado no G73 (`install -r`, banco v3 preservado); ainda não conferido na tela pelo usuário
+  - Campos de dinheiro no formato brasileiro com máscara de banco (`mascaraDinheiro` em
+    `util/Money.kt`): só dígitos, enchem da direita, sempre `1.500,00`, cursor no fim. Vale para
+    Frete, Desconto, Sinal, Caução, Pix "Outro valor" e todos os de Preços. Quantidades ficaram iguais.
+  - **Editar e excluir pedido** no fim do Detalhe. Editar só Orçamento/Confirmado (abre o Novo com
+    "Editando pedido #N" e Cancelar; mantém o número; itens que já estavam mantêm o preço congelado;
+    a disponibilidade não conta o próprio pedido). Excluir em qualquer situação, com confirmação.
+    Sem mudança de schema (só consultas novas no DAO).
+  - **Data e hora de emissão** (`criadoEmEpochSeg`, que já existia no banco): aparece no Detalhe e na
+    mensagem do Pix no WhatsApp ("Pedido emitido em 26/11/2026 às 14:35"). Editar grava a hora nova.
+  - Lista de Pedidos: cartão inteiro na cor clara da situação (orçamento roxo, confirmado azul,
+    entregue laranja, devolvido cinza), etiqueta em fundo branco. **Trocadas a pedido dele:** orçamento
+    amarelo, confirmado azul, entregue verde, devolvido cinza (`corStatus`); cartão e filtros de cima
+    na mesma cor, mais forte que a etiqueta (`fundoCartaoStatus`).
+
+Nota de conexão (2026-11-26): depois do `adb pair`, o `mdns services` **não** mostrou a porta de
+conexão. Achei varrendo as portas TCP 30000–50000 do IP do celular (script Python com socket,
+~15 s) e deu uma só aberta (36583); `adb connect` nela funcionou. IP do celular: 192.168.15.2.
+- **2026-11-26** — Pedidos: "Todos" na linha do título, as 4 situações numa linha só, cartões mais
+  juntos. **Filtro por mês** (setas ‹ › + nome do mês; tocar no nome volta ao mês atual): entra todo
+  pedido cujo período toca o mês (24/12→01/01 aparece em dezembro e janeiro). Ordem agora do começo
+  para o fim do mês (antes: entrega mais distante primeiro).
+- **2026-11-26** — Filtro de situação virou **marcação múltipla** e o "Todos" saiu: nenhuma marcada
+  aparece exatamente o que está marcado; abre com as quatro marcadas; nenhuma = lista vazia com aviso
+  (`alternarStatus`). A 1ª versão ("nenhuma = todas") confundiu o usuário: desmarcar mostrava tudo.
+- **2026-11-26** — Pedidos: mês fixo na linha do título (‹ Novembro 2026 ›; tocar volta para hoje);
+  embaixo chave **Semana | Mês** (abre em Mês, ver abaixo) com as setas da semana (segunda a domingo, para o fim
+  de semana ficar junto). Semana do mês = regra ISO (a da quinta-feira); trocar o mês leva à 1ª semana
+  dele. Abre **sem o Devolvido marcado** (só o que ainda dá trabalho). Detalhe: Editar/Excluir no topo.
+- **2026-11-26** — Testado tudo numa linha só (título + Semana | Mês + setas): o usuário **não gostou**,
+  voltou para as duas linhas. **Padrão agora é Mês** (não Semana), abrindo no mês de hoje.

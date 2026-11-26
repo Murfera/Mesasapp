@@ -80,4 +80,19 @@ object Datas {
     /** O inverso: o DatePicker do Material espera meia-noite UTC. */
     fun millisUtcDeData(data: LocalDate): Long =
         data.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+
+    /** Segunda-feira da semana de [data]. */
+    fun segundaDaSemana(data: LocalDate): LocalDate =
+        data.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+
+    /**
+     * Primeira semana do mes (regra ISO): a que tem a quinta-feira dentro do mes.
+     * Se o dia 1 cai de sexta a domingo, a semana dele e do mes anterior.
+     */
+    fun primeiraSemana(mes: java.time.YearMonth): LocalDate {
+        val dia1 = mes.atDay(1)
+        val seg = segundaDaSemana(dia1)
+        return if (dia1.dayOfWeek.value > 4) seg.plusWeeks(1) else seg
+    }
 }
+

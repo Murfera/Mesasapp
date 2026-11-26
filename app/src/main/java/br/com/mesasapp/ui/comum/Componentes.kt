@@ -39,15 +39,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -58,6 +61,7 @@ import br.com.mesasapp.ui.centavosParaCampo
 import br.com.mesasapp.ui.theme.Cores
 import br.com.mesasapp.ui.theme.Inter
 import br.com.mesasapp.ui.theme.SpaceGrotesk
+import br.com.mesasapp.util.mascaraDinheiro
 import br.com.mesasapp.util.toCentsOrNull
 
 /** Texto no estilo do prototipo: tamanho em sp, peso numerico. */
@@ -123,11 +127,22 @@ fun Pilula(texto: String, fundo: Color, cor: Color, modifier: Modifier = Modifie
 
 @Composable
 fun corStatus(s: StatusPedido): Pair<Color, Color> = when (s) {
-    StatusPedido.ORCAMENTO -> Cores.RoxoClaro to Cores.Roxo
+    // Cores escolhidas pelo usuario em 2026-11-26.
+    StatusPedido.ORCAMENTO -> Cores.AmareloClaro to Cores.Amarelo
     StatusPedido.CONFIRMADO -> Cores.AzulClaro to Cores.Azul
-    StatusPedido.ENTREGUE -> Cores.LaranjaClaro to Cores.Laranja
+    StatusPedido.ENTREGUE -> Cores.VerdeClaro to Cores.VerdeEscuro
     StatusPedido.DEVOLVIDO -> Cores.CinzaStatus to Cores.CinzaStatusTexto
 }
+
+/**
+ * Fundo do cartao na lista de Pedidos: a cor da situacao misturada ao fundo, mais
+ * forte que a etiqueta (pedido do usuario). A mistura vale nos dois temas.
+ */
+@Composable
+fun fundoCartaoStatus(s: StatusPedido): Color =
+    // O amarelo do texto e quase marrom; o fundo usa um amarelo vivo para parecer amarelo.
+    if (s == StatusPedido.ORCAMENTO) lerp(Cores.Superficie, Cores.AmareloVivo, 0.30f)
+    else lerp(Cores.Superficie, corStatus(s).second, 0.22f)
 
 @Composable
 fun PilulaStatus(s: StatusPedido, modifier: Modifier = Modifier) {
@@ -143,10 +158,16 @@ fun Chip(
     aoTocar: () -> Unit,
     modifier: Modifier = Modifier,
     altura: Dp = 40.dp,
-    escuro: Boolean = false
+    escuro: Boolean = false,
+    status: StatusPedido? = null,
+    paddingH: Dp = 14.dp,
+    tamanho: TextUnit = 13.sp
 ) {
     val forma = RoundedCornerShape(altura / 2)
     val (fundo, cor, borda) = when {
+        // Filtro de situacao: a mesma cor do cartao; marcado fica cheio na cor forte.
+        status != null && marcado -> corStatus(status).second.let { Triple(it, Cores.Superficie, it) }
+        status != null -> corStatus(status).second.let { Triple(fundoCartaoStatus(status), it, it.copy(alpha = 0.35f)) }
         marcado && escuro -> Triple(Cores.Texto, Cores.Superficie, Cores.Texto)
         marcado -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Destaque)
         else -> Triple(Cores.Superficie, Cores.Texto, Cores.BordaCampo)
@@ -158,9 +179,9 @@ fun Chip(
             .background(fundo)
             .border(1.dp, borda, forma)
             .clickable(role = Role.Button, onClick = aoTocar)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = paddingH),
         contentAlignment = Alignment.Center
-    ) { T(texto, 13.sp, 600, cor, umaLinha = true) }
+    ) { T(texto, tamanho, 600, cor, umaLinha = true) }
 }
 
 @Composable
@@ -185,43 +206,62 @@ fun CampoBase(
     alinhar: TextAlign = TextAlign.Start,
     paddingH: Dp = 14.dp,
     erro: Boolean = false,
+    cursorNoFim: Boolean = false,
     aoFocar: (Boolean) -> Unit = {}
 ) {
     var focado by remember { mutableStateOf(false) }
     val forma = RoundedCornerShape(10.dp)
-    BasicTextField(
-        value = valor,
-        onValueChange = aoMudar,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = teclado),
-        textStyle = TextStyle(fontFamily = Inter, fontSize = tamanho, fontWeight = FontWeight(peso), color = Cores.Texto, textAlign = alinhar),
-        cursorBrush = SolidColor(Cores.Destaque),
-        modifier = modifier
-            .height(altura)
-            .onFocusChanged { focado = it.isFocused; aoFocar(it.isFocused) },
-        decorationBox = { campo ->
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(altura)
-                    .clip(forma)
-                    .background(Cores.Superficie)
-                    // O erro vence o foco: o campo continua vermelho com o cursor dentro.
-                    .border(
-                        if (focado || erro) 2.dp else 1.dp,
-                        if (erro) Cores.Erro else if (focado) Cores.Destaque else Cores.BordaCampo,
-                        forma
-                    )
-                    .padding(horizontal = paddingH),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (valor.isEmpty() && placeholder.isNotEmpty()) {
-                    T(placeholder, tamanho, 400, Cores.Placeholder, Modifier.fillMaxWidth(), alinhar = alinhar, umaLinha = true)
-                }
-                campo()
+    // Dinheiro: o cursor fica sempre no fim, porque a mascara reescreve o texto
+    // inteiro a cada digito (o "1.500,00" cresce um caractere de pontuacao).
+    val decoracao: @Composable (@Composable () -> Unit) -> Unit = { campo ->
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(altura)
+                .clip(forma)
+                .background(Cores.Superficie)
+                // O erro vence o foco: o campo continua vermelho com o cursor dentro.
+                .border(
+                    if (focado || erro) 2.dp else 1.dp,
+                    if (erro) Cores.Erro else if (focado) Cores.Destaque else Cores.BordaCampo,
+                    forma
+                )
+                .padding(horizontal = paddingH),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (valor.isEmpty() && placeholder.isNotEmpty()) {
+                T(placeholder, tamanho, 400, Cores.Placeholder, Modifier.fillMaxWidth(), alinhar = alinhar, umaLinha = true)
             }
+            campo()
         }
-    )
+    }
+    if (cursorNoFim) {
+        BasicTextField(
+            value = TextFieldValue(valor, TextRange(valor.length)),
+            onValueChange = { aoMudar(it.text) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = teclado),
+            textStyle = TextStyle(fontFamily = Inter, fontSize = tamanho, fontWeight = FontWeight(peso), color = Cores.Texto, textAlign = alinhar),
+            cursorBrush = SolidColor(Cores.Destaque),
+            modifier = modifier
+                .height(altura)
+                .onFocusChanged { focado = it.isFocused; aoFocar(it.isFocused) },
+            decorationBox = decoracao
+        )
+    } else {
+        BasicTextField(
+            value = valor,
+            onValueChange = aoMudar,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = teclado),
+            textStyle = TextStyle(fontFamily = Inter, fontSize = tamanho, fontWeight = FontWeight(peso), color = Cores.Texto, textAlign = alinhar),
+            cursorBrush = SolidColor(Cores.Destaque),
+            modifier = modifier
+                .height(altura)
+                .onFocusChanged { focado = it.isFocused; aoFocar(it.isFocused) },
+            decorationBox = decoracao
+        )
+    }
 }
 
 /** Rotulo em cima, campo embaixo. */
@@ -233,11 +273,20 @@ fun Campo(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     teclado: KeyboardType = KeyboardType.Text,
-    tag: String? = null
+    tag: String? = null,
+    dinheiro: Boolean = false
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Rotulo(rotulo)
-        CampoBase(valor, aoMudar, Modifier.fillMaxWidth().then(tag?.let { Modifier.testTag(it) } ?: Modifier), placeholder, teclado)
+        // Dinheiro: mascara brasileira (1.500,00), so teclado de numeros.
+        CampoBase(
+            valor,
+            if (dinheiro) { novo -> aoMudar(mascaraDinheiro(novo)) } else aoMudar,
+            Modifier.fillMaxWidth().then(tag?.let { Modifier.testTag(it) } ?: Modifier),
+            placeholder,
+            if (dinheiro) KeyboardType.Number else teclado,
+            cursorNoFim = dinheiro
+        )
     }
 }
 
@@ -280,14 +329,15 @@ fun CampoNumero(
     CampoBase(
         texto,
         { novo ->
-            val limpo = if (dinheiro) novo.filter { it.isDigit() || it == ',' || it == '.' } else novo.filter { it.isDigit() }
+            val limpo = if (dinheiro) mascaraDinheiro(novo) else novo.filter { it.isDigit() }
             texto = limpo
             aoMudar(ler(limpo))
         },
         modifier,
         placeholder = placeholder,
-        teclado = if (dinheiro) KeyboardType.Decimal else KeyboardType.Number,
+        teclado = KeyboardType.Number,
         altura = altura, paddingH = paddingH, alinhar = alinhar, tamanho = tamanho, peso = peso,
+        cursorNoFim = dinheiro,
         aoFocar = { focado = it }
     )
 }

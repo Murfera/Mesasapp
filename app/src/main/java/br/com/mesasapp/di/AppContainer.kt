@@ -31,6 +31,15 @@ class Repositorio(context: Context) {
         p.pecas.map { PecaEntity(0, 0, it.modeloId, it.quantidade, it.reposicaoCentavos, it.quebradas, it.faltando) }
     )
 
+    /** Grava a hora da alteracao como nova emissao: o recibo sai com ela. */
+    suspend fun atualizarPedido(p: Pedido) = dao.atualizarPedido(
+        p.toEntity(Datas.agoraEpochSeg()),
+        p.linhas.map { LinhaEntity(0, 0, it.tipo, it.mesaId, it.cadId, it.qtd, it.cadeirasPorMesa, it.precoUnitCentavos) },
+        p.pecas.map { PecaEntity(0, 0, it.modeloId, it.quantidade, it.reposicaoCentavos, it.quebradas, it.faltando) }
+    )
+
+    suspend fun excluirPedido(id: Long) = dao.excluirPedido(id)
+
     suspend fun mudarStatus(id: Long, status: StatusPedido) = dao.mudarStatus(id, status)
 
     suspend fun registrarDevolucao(id: Long, quebradas: Map<String, Int>, faltando: Map<String, Int>, atraso: Int, finalCentavos: Long) =

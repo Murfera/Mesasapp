@@ -55,8 +55,10 @@ data class Paleta(
     val azulClaro: Color,
     val pontoEntrega: Color,
     val pontoRetirada: Color,
-    val roxo: Color,
-    val roxoClaro: Color,
+    /** Orcamento: texto/etiqueta [amarelo], fundo da etiqueta [amareloClaro], base do cartao [amareloVivo]. */
+    val amarelo: Color,
+    val amareloClaro: Color,
+    val amareloVivo: Color,
     val cinzaStatus: Color,
     val cinzaStatusTexto: Color,
     val qrFundo: Color,
@@ -101,8 +103,9 @@ val PaletaClara = Paleta(
     azulClaro = Color(0xFFE7EEFD),
     pontoEntrega = Color(0xFF1D4ED8),
     pontoRetirada = Color(0xFFC2410C),
-    roxo = Color(0xFF5B3C99),
-    roxoClaro = Color(0xFFF3EEFB),
+    amarelo = Color(0xFF854D0E),
+    amareloClaro = Color(0xFFFEF3C7),
+    amareloVivo = Color(0xFFEAB308),
     cinzaStatus = Color(0xFFEEF0EF),
     cinzaStatusTexto = Color(0xFF47514E),
     qrFundo = Color(0xFFFBFCFB),
@@ -144,8 +147,9 @@ val PaletaEscura = Paleta(
     azulClaro = Color(0xFF1C2A4D),
     pontoEntrega = Color(0xFF6B8EF0),
     pontoRetirada = Color(0xFFF07A45),
-    roxo = Color(0xFFC9B6F0),
-    roxoClaro = Color(0xFF2E2540),
+    amarelo = Color(0xFFF2CF6B),
+    amareloClaro = Color(0xFF3A3013),
+    amareloVivo = Color(0xFFF2CF6B),
     cinzaStatus = Color(0xFF2A302E),
     cinzaStatusTexto = Color(0xFFB9C2BE),
     qrFundo = Color(0xFF1F2826),
@@ -191,8 +195,9 @@ object Cores {
     val AzulClaro @Composable @ReadOnlyComposable get() = p.azulClaro
     val PontoEntrega @Composable @ReadOnlyComposable get() = p.pontoEntrega
     val PontoRetirada @Composable @ReadOnlyComposable get() = p.pontoRetirada
-    val Roxo @Composable @ReadOnlyComposable get() = p.roxo
-    val RoxoClaro @Composable @ReadOnlyComposable get() = p.roxoClaro
+    val Amarelo @Composable @ReadOnlyComposable get() = p.amarelo
+    val AmareloClaro @Composable @ReadOnlyComposable get() = p.amareloClaro
+    val AmareloVivo @Composable @ReadOnlyComposable get() = p.amareloVivo
     val CinzaStatus @Composable @ReadOnlyComposable get() = p.cinzaStatus
     val CinzaStatusTexto @Composable @ReadOnlyComposable get() = p.cinzaStatusTexto
     val QrFundo @Composable @ReadOnlyComposable get() = p.qrFundo

@@ -54,6 +54,36 @@ interface MesasDao {
         return id
     }
 
+    @androidx.room.Update
+    suspend fun atualizarPedidoEntity(p: PedidoEntity)
+
+    @Query("DELETE FROM pedido_linha WHERE pedidoId = :id")
+    suspend fun apagarLinhas(id: Long)
+
+    @Query("DELETE FROM pedido_peca WHERE pedidoId = :id")
+    suspend fun apagarPecas(id: Long)
+
+    @Query("DELETE FROM pedido WHERE id = :id")
+    suspend fun apagarPedidoEntity(id: Long)
+
+    /** Edicao: mesmo numero de pedido, linhas e pecas trocadas pelas novas. */
+    @Transaction
+    suspend fun atualizarPedido(p: PedidoEntity, linhas: List<LinhaEntity>, pecas: List<PecaEntity>) {
+        atualizarPedidoEntity(p)
+        apagarLinhas(p.id)
+        apagarPecas(p.id)
+        inserirLinhas(linhas.map { it.copy(id = 0, pedidoId = p.id) })
+        inserirPecas(pecas.map { it.copy(id = 0, pedidoId = p.id) })
+    }
+
+    /** Linhas e pecas apagadas explicitamente, sem depender do CASCADE. */
+    @Transaction
+    suspend fun excluirPedido(id: Long) {
+        apagarLinhas(id)
+        apagarPecas(id)
+        apagarPedidoEntity(id)
+    }
+
     // --- backup ---
 
     @Query("SELECT * FROM estoque ORDER BY modeloId")

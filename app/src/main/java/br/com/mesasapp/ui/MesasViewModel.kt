@@ -30,6 +30,7 @@ import br.com.mesasapp.domain.diarias
 import br.com.mesasapp.domain.fechamento
 import br.com.mesasapp.domain.reservado
 import br.com.mesasapp.util.Datas
+import br.com.mesasapp.util.formatAsPlain
 import br.com.mesasapp.util.toCentsOrNull
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -52,8 +53,12 @@ data class Mensagem(val ok: Boolean, val texto: String)
 data class ItemForm(val tipo: TipoLinha, val mesaId: String, val cadId: String)
 
 /** Linha ainda sem preco congelado: o valor acompanha os Precos ate salvar. */
-data class LinhaForm(val tipo: TipoLinha, val mesaId: String, val cadId: String, val qtd: Int) {
-    fun comPrecos(p: Precos) = LinhaPedido.nova(tipo, mesaId, cadId, qtd, p)
+data class LinhaForm(
+    val tipo: TipoLinha, val mesaId: String, val cadId: String, val qtd: Int,
+    /** Linha vinda de um pedido em edicao: mantem o preco e as cadeiras por mesa da epoca. */
+    val congelada: LinhaPedido? = null
+) {
+    fun comPrecos(p: Precos) = congelada?.copy(qtd = qtd) ?: LinhaPedido.nova(tipo, mesaId, cadId, qtd, p)
 }
 
 data class FormPedido(
@@ -85,9 +90,8 @@ data class FormPedido(
 /** Campo de dinheiro vazio ou invalido conta como zero no calculo. */
 fun centavos(texto: String): Long = texto.toCentsOrNull() ?: 0L
 
-/** Valor para dentro do campo: 4000 -> "40", 4050 -> "40,50". */
-fun centavosParaCampo(c: Long): String =
-    if (c % 100 == 0L) (c / 100).toString() else "%d,%02d".format(c / 100, c % 100)
+/** Valor para dentro do campo de dinheiro: 4000 -> "40,00", 150000 -> "1.500,00", 0 -> "". */
+fun centavosParaCampo(c: Long): String = if (c == 0L) "" else c.formatAsPlain()
 
 class MesasViewModel(private val container: AppContainer) : ViewModel() {
 
@@ -172,7 +176,38 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     // --- pedidos ---
-    var filtroStatus by mutableStateOf<StatusPedido?>(null)
+    /**
+     * Situacoes marcadas na lista de Pedidos (varias ao mesmo tempo). Aparece
+     * exatamente o que esta marcado: abre sem o Devolvido (so o que ainda da trabalho);
+     * nenhuma marcada = lista vazia.
+     */
+    var filtroStatus by mutableStateOf<Set<StatusPedido>>(StatusPedido.entries.toSet() - StatusPedido.DEVOLVIDO)
+
+    fun alternarStatus(s: StatusPedido) {
+        filtroStatus = if (s in filtroStatus) filtroStatus - s else filtroStatus + s
+    }
+    /** Lista de Pedidos: mes inteiro (padrao, escolha do usuario) ou semana. */
+    var pedidosPorSemana by mutableStateOf(false)
+    /** Segunda-feira da semana mostrada (segunda a domingo: o fim de semana fica junto). */
+    var semanaPedidos by mutableStateOf(Datas.segundaDaSemana(LocalDate.now())); private set
+    /** Mes da linha do titulo: abre no mes de hoje; andando pela semana, vira o mes da quinta-feira dela (regra ISO). */
+    var mesPedidos by mutableStateOf(YearMonth.now()); private set
+
+    fun mudarMesPedidos(delta: Long) {
+        mesPedidos = mesPedidos.plusMonths(delta)
+        semanaPedidos = Datas.primeiraSemana(mesPedidos)
+    }
+
+    fun mudarSemanaPedidos(delta: Long) {
+        semanaPedidos = semanaPedidos.plusWeeks(delta)
+        mesPedidos = YearMonth.from(semanaPedidos.plusDays(3))
+    }
+
+    /** Tocar no nome do mes volta para hoje. */
+    fun pedidosDeHoje() {
+        semanaPedidos = Datas.segundaDaSemana(LocalDate.now())
+        mesPedidos = YearMonth.now()
+    }
 
     // --- novo pedido ---
     var form by mutableStateOf(FormPedido(frete = centavosParaCampo(precos.value.fretePadraoCentavos)))
@@ -184,6 +219,50 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     var resumoAberto by mutableStateOf(false)
 
     private var freteAjustado = false
+
+    /** Numero do pedido aberto para edicao no Novo; null = pedido novo. */
+    var editandoId by mutableStateOf<Long?>(null); private set
+
+    /** So orcamento e confirmado: depois da entrega o estoque e a vistoria ja dependem dele. */
+    fun podeEditar(p: Pedido) = p.status == StatusPedido.ORCAMENTO || p.status == StatusPedido.CONFIRMADO
+
+    fun editarPedido(p: Pedido) {
+        if (!podeEditar(p)) return
+        form = FormPedido(
+            cliente = p.cliente, telefone = p.telefone, documento = p.documento,
+            endereco = p.endereco, referencia = p.referencia,
+            entrega = p.entrega, retirada = p.retirada,
+            itens = p.linhas.map { LinhaForm(it.tipo, it.mesaId ?: "", it.cadId ?: "", it.qtd, it) },
+            frete = centavosParaCampo(p.freteCentavos), desconto = centavosParaCampo(p.descontoCentavos),
+            sinal = centavosParaCampo(p.sinalCentavos), caucao = centavosParaCampo(p.caucaoCentavos),
+            pagamento = p.pagamento
+        )
+        freteAjustado = true
+        editandoId = p.id
+        resumoAberto = false
+        msg = null
+        irPara(Tela.NOVO)
+    }
+
+    fun cancelarEdicao() {
+        val id = editandoId
+        limparForm()
+        msg = null
+        if (id != null) abrirPedido(id)
+    }
+
+    private fun limparForm() {
+        form = FormPedido(frete = centavosParaCampo(precos.value.fretePadraoCentavos))
+        freteAjustado = false
+        editandoId = null
+    }
+
+    fun excluirPedido(p: Pedido) {
+        viewModelScope.launch { repo.excluirPedido(p.id) }
+        if (editandoId == p.id) limparForm()
+        irPara(Tela.PEDIDOS)
+        msg = Mensagem(true, "Pedido #${p.id} excluído.")
+    }
 
     init {
         // O frete padrao chega do DataStore depois do primeiro frame.
@@ -242,11 +321,14 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
             !f.datasOk -> return erro("A retirada precisa ser no mesmo dia ou depois da entrega.")
             c.mesas + c.cadeiras == 0 -> return erro("Adicione pelo menos um item ao pedido.")
         }
+        val editId = editandoId
         if (status == StatusPedido.CONFIRMADO) {
-            val falta = faltaEstoque(linhas, f.inicioEpochSeg, f.fimEpochSeg)
+            // Na edicao, o proprio pedido nao conta como reserva contra ele mesmo.
+            val falta = faltaEstoque(linhas, f.inicioEpochSeg, f.fimEpochSeg, editId ?: -1)
             if (falta.isNotEmpty()) return erro("Falta estoque de: ${nomes(falta)}. Troque o modelo ou salve como orçamento.")
         }
         val pedido = Pedido(
+            id = editId ?: 0,
             cliente = f.cliente.trim(), telefone = f.telefone.trim(), documento = f.documento.trim(),
             endereco = f.endereco.trim(), referencia = f.referencia.trim(),
             inicioEpochSeg = f.inicioEpochSeg, fimEpochSeg = f.fimEpochSeg, entrega = f.entrega, retirada = f.retirada,
@@ -257,14 +339,16 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         )
         resumoAberto = false
         viewModelScope.launch {
-            val id = repo.salvarPedido(pedido)
-            form = FormPedido(frete = centavosParaCampo(precos.value.fretePadraoCentavos))
-            freteAjustado = false
+            val id = if (editId != null) { repo.atualizarPedido(pedido); editId } else repo.salvarPedido(pedido)
+            limparForm()
             abrirPedido(id)
             msg = Mensagem(
                 true,
-                if (status == StatusPedido.ORCAMENTO) "Orçamento salvo. O estoque só é reservado ao confirmar."
-                else "Pedido confirmado e estoque reservado para o período."
+                when {
+                    editId != null -> "Pedido #$id alterado. O recibo sai com a nova data e hora."
+                    status == StatusPedido.ORCAMENTO -> "Orçamento salvo. O estoque só é reservado ao confirmar."
+                    else -> "Pedido confirmado e estoque reservado para o período."
+                }
             )
         }
     }

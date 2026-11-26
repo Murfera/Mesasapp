@@ -186,7 +186,9 @@ data class Pedido(
     val atrasoDias: Int = 0,
     val finalCentavos: Long? = null,
     val linhas: List<LinhaPedido>,
-    val pecas: List<PecaPedido>
+    val pecas: List<PecaPedido>,
+    /** Quando o pedido foi emitido (ou alterado pela ultima vez): vai no recibo. */
+    val criadoEmEpochSeg: Long = 0
 ) {
     val conta: Conta by lazy {
         conta(linhas, diarias(entrega, retirada), freteCentavos, descontoCentavos, sinalCentavos)

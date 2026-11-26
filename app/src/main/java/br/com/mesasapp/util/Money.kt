@@ -54,3 +54,17 @@ fun String.toCentsOrNull(): Long? {
 
     return value.movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
 }
+
+/** Maior valor que cabe num campo de dinheiro: R$ 9.999.999,99. */
+private const val DIGITOS_DINHEIRO = 9
+
+/**
+ * Mascara de moeda para campo digitado, como nos apps de banco: so digitos, que
+ * enchem da direita para a esquerda ("1" -> "0,01", "1500" -> "15,00",
+ * "150000" -> "1.500,00"). Sempre virgula e 2 casas; zero vira vazio.
+ */
+fun mascaraDinheiro(texto: String): String {
+    val digitos = texto.filter { it.isDigit() }.trimStart('0').take(DIGITOS_DINHEIRO)
+    val centavos = digitos.toLongOrNull() ?: 0L
+    return if (centavos == 0L) "" else centavos.formatAsPlain()
+}

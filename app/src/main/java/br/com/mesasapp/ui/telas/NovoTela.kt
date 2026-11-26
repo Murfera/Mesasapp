@@ -119,7 +119,7 @@ fun NovoTela(vm: MesasViewModel) {
     val f = vm.form
     val item = vm.itemForm
     val c = f.conta(precos)
-    val res = reservado(pedidos, f.inicioEpochSeg, f.fimEpochSeg)
+    val res = reservado(pedidos, f.inicioEpochSeg, f.fimEpochSeg, vm.editandoId ?: -1)
     val visiveis = Catalogo.modelos.filter { it.material in filtro.materiais() }
     fun livre(id: String) = (estoque[id] ?: 0) - (res[id] ?: 0)
     val cpm = precos.cadeirasPorMesa(item.mesaId)
@@ -144,7 +144,15 @@ fun NovoTela(vm: MesasViewModel) {
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Titulo("Novo pedido")
+            val editando = vm.editandoId
+            if (editando == null) {
+                Titulo("Novo pedido")
+            } else {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Titulo("Editando pedido #$editando", modifier = Modifier.weight(1f))
+                    Botao("Cancelar", { vm.cancelarEdicao() }, Modifier.testTag("cancelar_edicao"), altura = 36.dp, estilo = EstiloBotao.NEUTRO, tamanho = 13.sp)
+                }
+            }
 
             Cartao(espaco = 10.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -258,14 +266,14 @@ fun NovoTela(vm: MesasViewModel) {
                 T("Valores e pagamento", 15.sp, 600)
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Campo("Frete (R$)", f.frete, { vm.mudarForm(f.copy(frete = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
-                        Campo("Desconto (R$)", f.desconto, { vm.mudarForm(f.copy(desconto = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
+                        Campo("Frete (R$)", f.frete, { vm.mudarForm(f.copy(frete = it)) }, Modifier.weight(1f), dinheiro = true)
+                        Campo("Desconto (R$)", f.desconto, { vm.mudarForm(f.copy(desconto = it)) }, Modifier.weight(1f), dinheiro = true)
                     }
                     // Sinal e caucao so aparecem se ligados em menu > Exibir.
                     if (pagamento.mostrarSinal || pagamento.mostrarCaucao) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            if (pagamento.mostrarSinal) Campo("Sinal pago (R$)", f.sinal, { vm.mudarForm(f.copy(sinal = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
-                            if (pagamento.mostrarCaucao) Campo("Caução (R$)", f.caucao, { vm.mudarForm(f.copy(caucao = dinheiro(it))) }, Modifier.weight(1f), teclado = KeyboardType.Decimal)
+                            if (pagamento.mostrarSinal) Campo("Sinal pago (R$)", f.sinal, { vm.mudarForm(f.copy(sinal = it)) }, Modifier.weight(1f), dinheiro = true)
+                            if (pagamento.mostrarCaucao) Campo("Caução (R$)", f.caucao, { vm.mudarForm(f.copy(caucao = it)) }, Modifier.weight(1f), dinheiro = true)
                             if (!(pagamento.mostrarSinal && pagamento.mostrarCaucao)) Box(Modifier.weight(1f))
                         }
                     }
@@ -280,7 +288,7 @@ fun NovoTela(vm: MesasViewModel) {
 
             // Sem rodape fixo: o botao fica no fim do formulario e abre o resumo.
             Botao(
-                "Confirmar pedido · " + c.totalCentavos.formatAsBrl(),
+                (if (vm.editandoId != null) "Revisar alterações · " else "Confirmar pedido · ") + c.totalCentavos.formatAsBrl(),
                 {
                     vm.msg = null
                     // Faltando nome ou item, o resumo nem abre: marca em vermelho o que falta
@@ -321,7 +329,7 @@ private fun ResumoPedido(vm: MesasViewModel, c: br.com.mesasapp.domain.Conta, f:
             Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            T("Resumo do pedido", 17.sp, 600, modifier = Modifier.padding(bottom = 4.dp))
+            T(vm.editandoId?.let { "Alterações do pedido #$it" } ?: "Resumo do pedido", 17.sp, 600, modifier = Modifier.padding(bottom = 4.dp))
             LinhaValor(rotuloAluguel(c.dias, c.diariaCentavos), c.aluguelCentavos.formatAsBrl())
             LinhaValor("Frete", centavos(f.frete).formatAsBrl())
             LinhaValor("Desconto", "− " + centavos(f.desconto).formatAsBrl())
@@ -339,14 +347,12 @@ private fun ResumoPedido(vm: MesasViewModel, c: br.com.mesasapp.domain.Conta, f:
             vm.msg?.takeIf { !it.ok }?.let { Aviso(it.texto, false, vertical = 8.dp) }
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Botao("Salvar orçamento", { vm.salvar(StatusPedido.ORCAMENTO) }, Modifier.weight(1f).testTag("botao_orcamento"), estilo = EstiloBotao.CONTORNO)
-                Botao("Emitir pedido", { vm.salvar(StatusPedido.CONFIRMADO) }, Modifier.weight(1.3f).testTag("botao_confirmar"))
+                Botao(if (vm.editandoId != null) "Salvar pedido" else "Emitir pedido", { vm.salvar(StatusPedido.CONFIRMADO) }, Modifier.weight(1.3f).testTag("botao_confirmar"))
             }
         }
     }
 }
 
-/** So digitos, virgula e ponto: o resto nao vira dinheiro. */
-private fun dinheiro(s: String) = s.filter { it.isDigit() || it == ',' || it == '.' }
 
 /**
  * Escolha do modelo em poucos toques: material (aba), braco (so plastico, so
@@ -454,15 +460,19 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
 
 /** Escolha de duas opcoes lado a lado, no mesmo estilo das abas do Estoque. */
 @Composable
-private fun Segmentos(opcoes: List<String>, selecionada: Int, tag: String, aoEscolher: (Int) -> Unit) {
+internal fun Segmentos(
+    opcoes: List<String>, selecionada: Int, tag: String,
+    modifier: Modifier = Modifier.fillMaxWidth(), altura: androidx.compose.ui.unit.Dp = 40.dp,
+    aoEscolher: (Int) -> Unit
+) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Cores.Abas).padding(4.dp),
+        modifier.clip(RoundedCornerShape(12.dp)).background(Cores.Abas).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         opcoes.forEachIndexed { i, nome ->
             val sel = i == selecionada
             Box(
-                Modifier.weight(1f).height(40.dp)
+                Modifier.weight(1f).height(altura)
                     .then(if (sel) Modifier.shadow(1.dp, RoundedCornerShape(9.dp)) else Modifier)
                     .clip(RoundedCornerShape(9.dp))
                     .then(if (sel) Modifier.background(Cores.GradienteVerde) else Modifier)

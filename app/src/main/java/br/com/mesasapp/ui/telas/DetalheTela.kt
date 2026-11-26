@@ -22,13 +22,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +47,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,12 +107,27 @@ fun DetalheTela(vm: MesasViewModel) {
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f)) {
-                T("Pedido #${o.id}", 13.sp, 400, Cores.Suave)
+                T("Pedido #${o.id}" + emitido(o.criadoEmEpochSeg)?.let { " · $it" }.orEmpty(), 13.sp, 400, Cores.Suave, Modifier.testTag("emitido"))
                 Titulo(o.cliente, modifier = Modifier.padding(top = 2.dp))
             }
             PilulaStatus(o.status, Modifier.testTag("status_pedido"))
         }
 
+        // No topo (pedido do usuario). Editar so antes da entrega; excluir sempre, com confirmacao.
+        var confirmarExclusao by remember { mutableStateOf(false) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (vm.podeEditar(o)) {
+                Botao("Editar pedido", { vm.editarPedido(o) }, Modifier.weight(1f).testTag("botao_editar"), estilo = EstiloBotao.CONTORNO) {
+                    Icon(Icons.Outlined.Edit, null, tint = Cores.Destaque, modifier = Modifier.size(18.dp))
+                }
+            }
+            Botao("Excluir pedido", { confirmarExclusao = true }, Modifier.weight(1f).testTag("botao_excluir"), estilo = EstiloBotao.NEUTRO) {
+                Icon(Icons.Outlined.Delete, null, tint = Cores.Erro, modifier = Modifier.size(18.dp))
+            }
+        }
+        if (!vm.podeEditar(o)) {
+            T("Pedido já entregue não pode ser editado, só excluído.", 12.sp, 400, Cores.Suave)
+        }
         vm.msg?.let { Aviso(it.texto, it.ok) }
 
         Cartao(espaco = 10.dp) {
@@ -264,7 +284,7 @@ fun DetalheTela(vm: MesasViewModel) {
                     }
                 }
                 if (atual.first == "outro") {
-                    Campo("Valor a cobrar (R$)", vm.pixOutro, { vm.pixOutro = it.filter { ch -> ch.isDigit() || ch == ',' || ch == '.' }; vm.pixCopiado = false }, teclado = KeyboardType.Decimal)
+                    Campo("Valor a cobrar (R$)", vm.pixOutro, { vm.pixOutro = it; vm.pixCopiado = false }, dinheiro = true)
                 }
                 if (valor > 0) {
                     val codigo = remember(pixCfg, valor, o.id) {
@@ -309,6 +329,7 @@ fun DetalheTela(vm: MesasViewModel) {
                         )
                         val primeiro = o.cliente.trim().substringBefore(' ')
                         val texto = "Olá, $primeiro! Segue o Pix do pedido #${o.id} (entrega ${Datas.dm(o.entrega)}, retirada ${Datas.dm(o.retirada)}).\n" +
+                            emitido(o.criadoEmEpochSeg)?.let { "Pedido $it.\n" }.orEmpty() +
                             atual.second.replace(Regex(" \\(.*\\)"), "") + ": " + valor.formatAsBrl() +
                             "\n\nPix copia e cola:\n" + codigo + "\n\nRecebedor: " + nome
                         Botao("Enviar no WhatsApp", { Links.abrir(contexto, Links.whatsApp(o.telefone, texto)) }, Modifier.weight(1.3f)) {
@@ -330,8 +351,34 @@ fun DetalheTela(vm: MesasViewModel) {
         if (acao != null) {
             Botao(acao, { vm.acaoDoStatus(o) }, Modifier.fillMaxWidth().testTag("botao_acao"), altura = 52.dp, tamanho = 15.sp)
         }
+
+        if (confirmarExclusao) {
+            val aviso = when (o.status) {
+                StatusPedido.CONFIRMADO, StatusPedido.ENTREGUE -> "As peças reservadas voltam a ficar livres nessas datas."
+                StatusPedido.DEVOLVIDO -> "As peças quebradas ou faltando que já saíram do estoque não voltam; ajuste no Estoque se precisar."
+                StatusPedido.ORCAMENTO -> "O orçamento some da lista."
+            }
+            AlertDialog(
+                onDismissRequest = { confirmarExclusao = false },
+                containerColor = Cores.Superficie,
+                title = { T("Excluir o pedido #${o.id}?", 17.sp, 600) },
+                text = { T("${o.cliente}. $aviso Não dá para desfazer.", 14.sp, 400, Cores.Texto2) },
+                confirmButton = {
+                    TextButton({ confirmarExclusao = false; vm.excluirPedido(o) }, Modifier.testTag("confirmar_exclusao")) {
+                        T("Excluir", 14.sp, 600, Cores.Erro)
+                    }
+                },
+                dismissButton = {
+                    TextButton({ confirmarExclusao = false }) { T("Cancelar", 14.sp, 600, Cores.Destaque) }
+                }
+            )
+        }
     }
 }
+
+/** "emitido em 26/11/2026 às 14:35" (pedido antigo sem a hora gravada: null). */
+private fun emitido(epochSeg: Long): String? =
+    if (epochSeg <= 0) null else "emitido em ${Datas.formatarData(epochSeg)} às ${Datas.formatarHora(epochSeg)}"
 
 @Composable
 private fun LinhaPasso(rotulo: String, valor: Int, editavel: Boolean, descricao: String, tag: String, passo: (Int) -> Unit) {

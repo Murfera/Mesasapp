@@ -149,9 +149,9 @@ fun AgendaTela(vm: MesasViewModel) {
 }
 
 @Composable
-private fun Seta(icone: androidx.compose.ui.graphics.vector.ImageVector, descricao: String, aoTocar: () -> Unit) {
+internal fun Seta(icone: androidx.compose.ui.graphics.vector.ImageVector, descricao: String, tamanho: androidx.compose.ui.unit.Dp = 44.dp, aoTocar: () -> Unit) {
     Box(
-        Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClick = aoTocar)
+        Modifier.size(tamanho).clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClick = aoTocar)
             .semantics { contentDescription = descricao },
         contentAlignment = Alignment.Center
     ) { Icon(icone, null, tint = Cores.Texto, modifier = Modifier.size(24.dp)) }

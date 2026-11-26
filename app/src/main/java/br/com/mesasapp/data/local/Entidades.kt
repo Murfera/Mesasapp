@@ -86,7 +86,7 @@ fun PedidoComItens.toModel(): Pedido = with(pedido) {
         retirada = Datas.paraLocal(fimEpochSeg).toLocalDate(),
         freteCentavos = freteCentavos, descontoCentavos = descontoCentavos, sinalCentavos = sinalCentavos,
         caucaoCentavos = caucaoCentavos, pagamento = pagamento, status = status, atrasoDias = atrasoDias,
-        finalCentavos = finalCentavos,
+        finalCentavos = finalCentavos, criadoEmEpochSeg = criadoEmEpochSeg,
         linhas = linhas.sortedBy { it.id }.map { LinhaPedido(it.tipo, it.mesaId, it.cadId, it.qtd, it.cadeirasPorMesa, it.precoUnitCentavos) },
         pecas = pecas.sortedBy { it.id }.map { PecaPedido(it.modeloId, it.quantidade, it.reposicaoCentavos, it.quebradas, it.faltando) }
     )
