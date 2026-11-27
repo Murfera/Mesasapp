@@ -39,8 +39,18 @@ enum class ModoPrivacidade(val rotulo: String) {
     BIOMETRIA("Digital")
 }
 
-/** Menu > Config. pagamento: campos opcionais do Novo pedido. Desligados por padrao. */
-data class OpcoesPagamento(val mostrarSinal: Boolean = false, val mostrarCaucao: Boolean = false)
+/**
+ * Menu > Exibir: campos opcionais do Novo pedido (desligados por padrao) e o filtro
+ * Semana | Mes da lista de Pedidos (visivel por padrao, abrindo em Mes).
+ */
+data class OpcoesPagamento(
+    val mostrarSinal: Boolean = false,
+    val mostrarCaucao: Boolean = false,
+    val mostrarPeriodoPedidos: Boolean = true,
+    val pedidosPorSemana: Boolean = false,
+    /** Detalhe > Cobrar com Pix: mostra a imagem do QR Code ou so o copia e cola. */
+    val mostrarQrCode: Boolean = false
+)
 
 data class PixConfig(val chave: String = "", val nome: String = "", val cidade: String = "")
 
@@ -62,6 +72,9 @@ class ConfigStore(private val context: Context) {
     private val TEMA = stringPreferencesKey("tema")
     private val MOSTRAR_SINAL = booleanPreferencesKey("mostrar_sinal")
     private val MOSTRAR_CAUCAO = booleanPreferencesKey("mostrar_caucao")
+    private val MOSTRAR_PERIODO = booleanPreferencesKey("mostrar_periodo_pedidos")
+    private val POR_SEMANA = booleanPreferencesKey("pedidos_por_semana")
+    private val MOSTRAR_QR = booleanPreferencesKey("mostrar_qr_code")
     private val BACKUP_AUTO = booleanPreferencesKey("backup_automatico")
     private val BACKUP_PASTA = stringPreferencesKey("backup_pasta_uri")
     private val BACKUP_ULTIMO = longPreferencesKey("backup_ultimo_em")
@@ -119,12 +132,18 @@ class ConfigStore(private val context: Context) {
         context.dataStore.edit { it[PRIVACIDADE] = m.name }
 
     val pagamento: Flow<OpcoesPagamento> = context.dataStore.data.map { p ->
-        OpcoesPagamento(p[MOSTRAR_SINAL] ?: false, p[MOSTRAR_CAUCAO] ?: false)
+        OpcoesPagamento(
+            p[MOSTRAR_SINAL] ?: false, p[MOSTRAR_CAUCAO] ?: false,
+            p[MOSTRAR_PERIODO] ?: true, p[POR_SEMANA] ?: false, p[MOSTRAR_QR] ?: false
+        )
     }
 
     suspend fun definirPagamento(o: OpcoesPagamento) = context.dataStore.edit {
         it[MOSTRAR_SINAL] = o.mostrarSinal
         it[MOSTRAR_CAUCAO] = o.mostrarCaucao
+        it[MOSTRAR_PERIODO] = o.mostrarPeriodoPedidos
+        it[POR_SEMANA] = o.pedidosPorSemana
+        it[MOSTRAR_QR] = o.mostrarQrCode
     }
 
     suspend fun definirFiltro(f: FiltroMaterial) = context.dataStore.edit { it[FILTRO] = f.name }
@@ -184,6 +203,9 @@ class ConfigStore(private val context: Context) {
             prefs[PIX_CIDADE] = pixConfig.cidade
             prefs[MOSTRAR_SINAL] = op.mostrarSinal
             prefs[MOSTRAR_CAUCAO] = op.mostrarCaucao
+            prefs[MOSTRAR_PERIODO] = op.mostrarPeriodoPedidos
+            prefs[POR_SEMANA] = op.pedidosPorSemana
+            prefs[MOSTRAR_QR] = op.mostrarQrCode
         }
     }
 }

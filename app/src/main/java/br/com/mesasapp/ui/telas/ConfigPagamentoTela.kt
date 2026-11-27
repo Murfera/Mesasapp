@@ -28,7 +28,7 @@ import br.com.mesasapp.ui.comum.Titulo
 import br.com.mesasapp.ui.comum.Voltar
 import br.com.mesasapp.ui.theme.Cores
 
-/** Menu > Exibir: liga ou desliga os campos opcionais do Novo pedido. */
+/** Menu > Exibir: campos opcionais do Novo pedido e o filtro Semana | Mês da lista de Pedidos. */
 @Composable
 fun ConfigPagamentoTela(vm: MesasViewModel) {
     val op by vm.pagamento.collectAsState()
@@ -49,6 +49,28 @@ fun ConfigPagamentoTela(vm: MesasViewModel) {
             Chave("Caução", "Valor de garantia, devolvido se tudo voltar inteiro.", op.mostrarCaucao, "chave_caucao") {
                 vm.definirPagamento(op.copy(mostrarCaucao = it))
             }
+        }
+        Cartao(espaco = 0.dp) {
+            T("Tela de Pedidos.", 13.sp, 400, Cores.Suave, Modifier.padding(bottom = 6.dp))
+            Chave(
+                "Filtro Semana | Mês", "Mostra a escolha entre semana e mês acima da lista.",
+                op.mostrarPeriodoPedidos, "chave_periodo"
+            ) { vm.definirPagamento(op.copy(mostrarPeriodoPedidos = it)) }
+            Divisor()
+            Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                T("Abrir mostrando", 15.sp, 600)
+                T("Período da lista ao abrir os Pedidos.", 12.sp, 400, Cores.Suave)
+                Segmentos(listOf("Semana", "Mês"), if (op.pedidosPorSemana) 0 else 1, "padrao_periodo", altura = 36.dp) {
+                    vm.definirPagamento(op.copy(pedidosPorSemana = it == 0))
+                }
+            }
+        }
+        Cartao(espaco = 0.dp) {
+            T("Cobrar com Pix, no pedido.", 13.sp, 400, Cores.Suave, Modifier.padding(bottom = 6.dp))
+            Chave(
+                "QR Code", "Desligado, mostra só o código copia e cola e o botão Copiar.",
+                op.mostrarQrCode, "chave_qr"
+            ) { vm.definirPagamento(op.copy(mostrarQrCode = it)) }
         }
     }
 }

@@ -46,7 +46,11 @@ fun PedidosTela(vm: MesasViewModel) {
     val hoje = LocalDate.now()
     val mes = vm.mesPedidos
     val semana = vm.semanaPedidos
-    val (ini, fim) = if (vm.pedidosPorSemana) semana to semana.plusDays(6) else mes.atDay(1) to mes.atEndOfMonth()
+    // Menu > Exibir: mostra ou esconde a chave Semana | Mes e define com qual a lista abre.
+    // Escondida, vale sempre o padrao de la.
+    val exibir by vm.pagamento.collectAsState()
+    val porSemana = if (exibir.mostrarPeriodoPedidos) vm.pedidosPorSemana ?: exibir.pedidosPorSemana else exibir.pedidosPorSemana
+    val (ini, fim) = if (porSemana) semana to semana.plusDays(6) else mes.atDay(1) to mes.atEndOfMonth()
     val linhas = todos
         .filter { it.temMaterial(filtro) }
         .filter { it.status in vm.filtroStatus }
@@ -65,25 +69,26 @@ fun PedidosTela(vm: MesasViewModel) {
         // Titulo com o mes fixo ao lado; embaixo, Semana | Mes e as setas da semana.
         // (Tudo numa linha so foi testado e o usuario preferiu assim.)
         item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Titulo("Pedidos", modifier = Modifier.weight(1f))
+            // Folga maior entre o titulo e os filtros (pedido do usuario).
+            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Titulo("Pedidos", 18.sp, Modifier.weight(1f))
                 Seta(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Mês anterior") { vm.mudarMesPedidos(-1) }
                 // Tocar no nome do mes volta para hoje.
                 T(
-                    Datas.mes(mes.monthValue).replaceFirstChar { it.uppercase() } + " " + mes.year, 15.sp, 600,
+                    Datas.mes(mes.monthValue).replaceFirstChar { it.uppercase() } + " " + mes.year, 18.sp, 600,
                     modifier = Modifier.clickable(role = Role.Button) { vm.pedidosDeHoje() }.testTag("mes_pedidos"),
                     alinhar = TextAlign.Center
                 )
                 Seta(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próximo mês") { vm.mudarMesPedidos(1) }
             }
         }
-        item {
+        if (exibir.mostrarPeriodoPedidos || porSemana) item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Segmentos(
-                    listOf("Semana", "Mês"), if (vm.pedidosPorSemana) 0 else 1, "periodo_pedidos",
+                if (exibir.mostrarPeriodoPedidos) Segmentos(
+                    listOf("Semana", "Mês"), if (porSemana) 0 else 1, "periodo_pedidos",
                     Modifier.width(160.dp), altura = 34.dp
                 ) { vm.pedidosPorSemana = it == 0 }
-                if (vm.pedidosPorSemana) {
+                if (porSemana) {
                     Seta(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Semana anterior") { vm.mudarSemanaPedidos(-1) }
                     T(
                         Datas.dm(semana) + " a " + Datas.dm(semana.plusDays(6)), 13.sp, 600,
@@ -131,7 +136,7 @@ fun PedidosTela(vm: MesasViewModel) {
         }
         if (vm.filtroStatus.isEmpty()) item { T("Marque uma situação acima para ver os pedidos.", 14.sp, 400, Cores.Suave) }
         else if (linhas.isEmpty()) item {
-            T(if (vm.pedidosPorSemana) "Nenhum pedido nesta semana com as situações marcadas." else "Nenhum pedido em ${Datas.mes(mes.monthValue)} de ${mes.year} com as situações marcadas.", 14.sp, 400, Cores.Suave)
+            T(if (porSemana) "Nenhum pedido nesta semana com as situações marcadas." else "Nenhum pedido em ${Datas.mes(mes.monthValue)} de ${mes.year} com as situações marcadas.", 14.sp, 400, Cores.Suave)
         }
     }
 }

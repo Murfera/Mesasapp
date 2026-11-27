@@ -171,6 +171,9 @@ object BackupSerializer {
                 JSONObject().apply {
                     put("mostrarSinal", c.pagamento.mostrarSinal)
                     put("mostrarCaucao", c.pagamento.mostrarCaucao)
+                    put("mostrarPeriodoPedidos", c.pagamento.mostrarPeriodoPedidos)
+                    put("pedidosPorSemana", c.pagamento.pedidosPorSemana)
+                    put("mostrarQrCode", c.pagamento.mostrarQrCode)
                 }
             )
         }
@@ -337,7 +340,10 @@ object BackupSerializer {
             ),
             pagamento = OpcoesPagamento(
                 mostrarSinal = exibirJson?.optBoolean("mostrarSinal", false) ?: false,
-                mostrarCaucao = exibirJson?.optBoolean("mostrarCaucao", false) ?: false
+                mostrarCaucao = exibirJson?.optBoolean("mostrarCaucao", false) ?: false,
+                mostrarPeriodoPedidos = exibirJson?.optBoolean("mostrarPeriodoPedidos", true) ?: true,
+                pedidosPorSemana = exibirJson?.optBoolean("pedidosPorSemana", false) ?: false,
+                mostrarQrCode = exibirJson?.optBoolean("mostrarQrCode", false) ?: false
             )
         )
     }

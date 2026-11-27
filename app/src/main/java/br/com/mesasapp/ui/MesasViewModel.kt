@@ -186,8 +186,11 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
     fun alternarStatus(s: StatusPedido) {
         filtroStatus = if (s in filtroStatus) filtroStatus - s else filtroStatus + s
     }
-    /** Lista de Pedidos: mes inteiro (padrao, escolha do usuario) ou semana. */
-    var pedidosPorSemana by mutableStateOf(false)
+    /**
+     * Lista de Pedidos: semana ou mes escolhido na propria tela. Nulo = segue o padrao
+     * do menu > Exibir (Mes, se ele nao mudou). Trocar o padrao la volta a nulo.
+     */
+    var pedidosPorSemana by mutableStateOf<Boolean?>(null)
     /** Segunda-feira da semana mostrada (segunda a domingo: o fim de semana fica junto). */
     var semanaPedidos by mutableStateOf(Datas.segundaDaSemana(LocalDate.now())); private set
     /** Mes da linha do titulo: abre no mes de hoje; andando pela semana, vira o mes da quinta-feira dela (regra ISO). */
@@ -421,6 +424,7 @@ class MesasViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch { config.definirPagamento(o) }
         if (!o.mostrarSinal) form = form.copy(sinal = "")
         if (!o.mostrarCaucao) form = form.copy(caucao = "")
+        if (o.pedidosPorSemana != pagamento.value.pedidosPorSemana) pedidosPorSemana = null
     }
     fun definirPix(p: PixConfig) = viewModelScope.launch { config.definirPix(p) }
 

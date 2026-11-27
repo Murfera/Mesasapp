@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-26 (fim do dia). Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-27 (noite). Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -44,6 +44,12 @@ visual, texto ou fluxo, **o protótipo manda**.
   trabalho dele (fora do Git).
 - **Exibir** (menu ⋮): chaves "Sinal pago" e "Caução", **desligadas por padrão**; só
   com elas ligadas os campos aparecem no Novo pedido. Desligar zera o valor digitado.
+  Cartão "Tela de Pedidos" (2026-11-27): chave **"Filtro Semana | Mês"** (ligada por padrão) e
+  **"Abrir mostrando" Semana | Mês** (padrão Mês). Com o filtro escondido vale sempre o padrão
+  (em Semana continuam as setas da semana). Trocar na tela de Pedidos vale até fechar o app.
+  Cartão "Cobrar com Pix": chave **"QR Code"** (**desligada por padrão**, pedido dele); desligada, o Pix do Detalhe mostra
+  só o valor, o copia e cola e o botão Copiar.
+  Chaves novas no DataStore e no backup (`mostrarPeriodoPedidos`, `pedidosPorSemana`, `mostrarQrCode`).
 - Abas: **Início, Pedidos, Novo, Agenda, Estoque**. Detalhe do pedido, Preços e
   Config. Pix abrem por cima (o voltar do Android volta).
 - **Início** (2026-11-24): abaixo da saudação, quadro "Jogos disponíveis hoje" na
@@ -74,12 +80,21 @@ visual, texto ou fluxo, **o protótipo manda**.
   pedido cujo período toca a semana/o mês; ordem do começo para o fim. Cartão inteiro na cor da
   situação: **orçamento amarelo, confirmado azul, entregue verde, devolvido cinza** (`corStatus`,
   `fundoCartaoStatus`), filtros na mesma cor. Testado "tudo numa linha só": ele não gostou.
-- **Detalhe**: **Editar pedido / Excluir pedido no topo**. Editar só Orçamento/Confirmado (abre o Novo
-  como "Editando pedido #N", mesmo número, itens antigos com preço congelado); excluir qualquer um,
-  com confirmação. "Pedido #N · emitido em dd/MM/aaaa às HH:mm" no topo e na mensagem do Pix
-  (editar grava a hora nova). Depois: dados, itens e valores, vistoria (quebradas, faltando, dias de atraso)
-  com total refeito, Google Agenda (só link), Pix (Sinal 50% / Saldo / Após vistoria
-  / Outro valor, QR, copia e cola, WhatsApp) e o botão da próxima situação.
+- **Detalhe** (arranjo do usuário em 2026-11-27, compacto: cartões a 6 dp um do outro, margem interna 14/12 dp):
+  - Linha 1: "‹ Pedidos" + "#N · emissão dd/MM/aaaa  HH:mm" (12 sp, à esquerda) + selo da situação à direita.
+  - Nome do cliente sozinho; depois **Editar pedido / Excluir pedido**. Editar só Orçamento/Confirmado (abre o
+    Novo como "Editando pedido #N", mesmo número, itens antigos com preço congelado; editar grava a hora nova);
+    excluir qualquer um, com confirmação.
+  - Avisos de sucesso (alterado, confirmado, entregue, devolvido) são **pop-up (Toast)**; erro fica fixo.
+  - Quadro de contato: "Entrega dd/MM/aaaa · Retirada dd/MM/aaaa" numa linha (11 sp) + botão **WhatsApp**
+    compacto (abre a conversa; não existe link que inicie a chamada); embaixo endereço/referência (só se
+    preenchidos) e, à direita, o telefone (abre o discador).
+  - Itens e valores (sem a linha "Sai do estoque"), vistoria com total refeito, **sem Google Agenda**.
+  - Pix: **um valor só** ("Valor do pedido" = total − sinal; depois de entregue, "Valor após vistoria" = com
+    quebras/faltas/atraso, menos sinal e caução). QR Code só se ligado em Exibir (padrão: desligado). Mensagem
+    do WhatsApp enxuta: título, pedido #N com emissão, entrega/retirada, valor, recebedor e o copia e cola no fim
+    (uma mensagem só: o WhatsApp mostra ao cliente o "Copiar Pix").
+  - Por último, o botão da próxima situação.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
   "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
 - Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`).
@@ -181,7 +196,8 @@ quando o cliente paga** — baixa manual.
 
 ## 7. Falta / decisões em aberto
 
-0. **Os testes de interface estão desatualizados** desde o refinamento do Novo pedido
+0. **Os testes de interface estão desatualizados** (também pelo Detalhe de 2026-11-27: Pix sem os botões
+   `pix_sinal`/`pix_saldo`/`pix_outro`, QR desligado por padrão, Google Agenda removida) desde o refinamento do Novo pedido
    (campos movidos para a janela de contato, botões no painel de resumo, cartões por cor) e, desde
    2026-11-26, também pela máscara de dinheiro (digitar "100" agora vale R$ 1,00), filtros de Pedidos
    e o "Todos" que saiu.
@@ -196,7 +212,7 @@ quando o cliente paga** — baixa manual.
    ligada. **Decisão em aberto:** estoque continua contando o dia da retirada inteiro
    (recomendado: tempo de buscar/conferir) ou passa a usar a hora exata. O banco já guarda a
    hora (`inicioEpochSeg`/`fimEpochSeg`), não precisa mudar o schema.
-7. **Cobrar com Pix com o sinal desligado**: os botões "Sinal (50%)" e "Saldo (total −
+7. ~~**Cobrar com Pix com o sinal desligado**~~ resolvido em 2026-11-27 (um valor só, sem botões): os botões "Sinal (50%)" e "Saldo (total −
    sinal)" ainda aparecem. Perguntado em 2026-11-24 se esconde o de sinal e troca o outro
    por "Total"; sem resposta ainda.
 3. Bloquear jogo com mesa de um material e cadeira de outro (hoje vale a mesa).
@@ -360,3 +376,20 @@ conexão. Achei varrendo as portas TCP 30000–50000 do IP do celular (script Py
   dele. Abre **sem o Devolvido marcado** (só o que ainda dá trabalho). Detalhe: Editar/Excluir no topo.
 - **2026-11-26** — Testado tudo numa linha só (título + Semana | Mês + setas): o usuário **não gostou**,
   voltou para as duas linhas. **Padrão agora é Mês** (não Semana), abrindo no mês de hoje.
+- **2026-11-27** — Exibir ganhou o cartão "Tela de Pedidos": mostrar/esconder o filtro Semana | Mês e
+  escolher com qual período a lista abre (padrão Mês). Instalado no G73 (banco v3 preservado).
+- **2026-11-27** — Pedidos: mês e título em 18 sp, mais espaço abaixo do título. Detalhe: Pix sem os botões
+  Sinal/Saldo/Outro valor — um valor só, calculado do pedido ("o cliente paga na retirada").
+- **2026-11-27** — Exibir: chave "QR Code" para mostrar ou esconder a imagem do QR no Pix do pedido.
+- **2026-11-27** — Mensagem do Pix no WhatsApp enxuta: título "Aluguel de mesas e cadeiras", pedido #N com emissão, entrega/retirada, valor, recebedor (nome do Config. Pix) e o copia e cola no fim.
+  Mantida em uma mensagem só: o WhatsApp já mostra para o cliente o botão "Copiar Pix" com só o código (conferido pelo usuário). Não fazer duas mensagens.
+- **2026-11-27** — Detalhe: tirada a linha "Sai do estoque: N mesas e N cadeiras" e o cartão Google Agenda inteiro (pedido dele). `Links.googleAgenda` ficou no código, sem uso na tela.
+- **2026-11-27** — Detalhe: botão "WhatsApp" ao lado do telefone (abre a conversa; tocar no número continua abrindo o discador). Não existe link que já inicie a chamada no WhatsApp.
+- **2026-11-27** — Detalhe: endereço/referência só quando preenchidos (sem os dois, a linha some e as datas sobem); botão WhatsApp tirado e logo depois **devolvido** (ele quer os dois: número = discador, botão = conversa no WhatsApp).
+- **2026-11-27** — Detalhe: avisos de sucesso ("Pedido #N alterado...", confirmado, entregue, devolvido) viram pop-up (Toast); erro continua fixo. Entrega/Retirada em 12 sp à direita do endereço (sem endereço, numa linha só).
+- **2026-11-27** — Detalhe: Entrega/Retirada (dd/MM/aaaa, 12 sp) à direita do nome do cliente; selo da situação subiu para a linha "Pedido #N · emitido em...". Quadro de baixo ficou só endereço/referência (se houver) e telefone + WhatsApp.
+- **2026-11-27** — Detalhe: "Pedido #N · emitido em..." (12 sp, à direita) e o selo da situação na mesma linha do "‹ Pedidos"; Entrega/Retirada numa linha só, à direita do nome do cliente.
+- **2026-11-27** — Topo do Detalhe: "#N · emissão dd/MM/aaaa  HH:mm" em 11 sp, para caber numa linha ao lado do "‹ Pedidos" e do selo (medido com a fonte Inter: em 12 sp ficava no limite e quebrava).
+- **2026-11-27** — Detalhe: topo "#N · emissão..." de volta a 12 sp, alinhado à esquerda (logo após "‹ Pedidos"), selo à direita. Cartões mais juntos (16→6 dp entre eles) e mais baixos (margem interna 14/12 dp, `PAD_CARTAO`).
+- **2026-11-27** — Detalhe, arranjo do usuário: nome do cliente sozinho; quadro de contato com Entrega/Retirada (dd/MM/aaaa, uma embaixo da outra) + botão WhatsApp na mesma linha; embaixo endereço/referência e, à direita, o telefone (abre o discador).
+  Ajuste: Entrega/Retirada numa linha só (11 sp) e botão WhatsApp compacto (30 dp de altura, só texto) na mesma linha.
