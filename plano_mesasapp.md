@@ -1,6 +1,6 @@
 # Plano do Mesasapp
 
-Atualizado em 2026-11-27 (noite). Este arquivo é o estado do projeto: o que foi decidido,
+Atualizado em 2026-11-28. Este arquivo é o estado do projeto: o que foi decidido,
 o que está feito, o que falta e o que ficou pendente de decisão.
 **Ler antes de retomar o trabalho.**
 
@@ -80,21 +80,25 @@ visual, texto ou fluxo, **o protótipo manda**.
   pedido cujo período toca a semana/o mês; ordem do começo para o fim. Cartão inteiro na cor da
   situação: **orçamento amarelo, confirmado azul, entregue verde, devolvido cinza** (`corStatus`,
   `fundoCartaoStatus`), filtros na mesma cor. Testado "tudo numa linha só": ele não gostou.
-- **Detalhe** (arranjo do usuário em 2026-11-27, compacto: cartões a 6 dp um do outro, margem interna 14/12 dp):
-  - Linha 1: "‹ Pedidos" + "#N · emissão dd/MM/aaaa  HH:mm" (12 sp, à esquerda) + selo da situação à direita.
-  - Nome do cliente sozinho; depois **Editar pedido / Excluir pedido**. Editar só Orçamento/Confirmado (abre o
-    Novo como "Editando pedido #N", mesmo número, itens antigos com preço congelado; editar grava a hora nova);
-    excluir qualquer um, com confirmação.
+- **Detalhe** (arranjo do usuário em 2026-11-27/28, compacto: cartões a 6 dp um do outro, margem interna 14/12 dp):
+  - Linha 1: "‹ Pedidos" + "#N · Emissão dd/MM/aaaa  HH:mm" (12 sp, à esquerda) + selo da situação à direita.
+  - Nome do cliente numa linha (corta com "...") com **ícones** lápis (editar) e lixeira (excluir) à direita,
+    14 dp de vão. Editar só Orçamento/Confirmado (abre o Novo como "Editando pedido #N", mesmo número, itens
+    antigos com preço congelado; editar grava a hora nova); excluir qualquer um, com confirmação.
   - Avisos de sucesso (alterado, confirmado, entregue, devolvido) são **pop-up (Toast)**; erro fica fixo.
-  - Quadro de contato: "Entrega dd/MM/aaaa · Retirada dd/MM/aaaa" numa linha (11 sp) + botão **WhatsApp**
-    compacto (abre a conversa; não existe link que inicie a chamada); embaixo endereço/referência (só se
-    preenchidos) e, à direita, o telefone (abre o discador).
-  - Itens e valores (sem a linha "Sai do estoque"), vistoria com total refeito, **sem Google Agenda**.
-  - Pix: **um valor só** ("Valor do pedido" = total − sinal; depois de entregue, "Valor após vistoria" = com
-    quebras/faltas/atraso, menos sinal e caução). QR Code só se ligado em Exibir (padrão: desligado). Mensagem
-    do WhatsApp enxuta: título, pedido #N com emissão, entrega/retirada, valor, recebedor e o copia e cola no fim
-    (uma mensagem só: o WhatsApp mostra ao cliente o "Copiar Pix").
-  - Por último, o botão da próxima situação.
+  - Quadro de contato: "Entrega dd/MM/aaaa · Retirada dd/MM/aaaa" (11 sp) + botão **📞 WhatsApp** compacto
+    (abre a conversa; não existe link que inicie a chamada); embaixo o endereço; na linha de baixo a
+    referência e, à direita, o telefone (abre o discador).
+  - **Itens e valores**: título com "Jogo: 1 mesa × N cadeiras" à direita (N congelado no pedido); cada item numa
+    linha ("1 jogo · Plástico Preta", "2 mesas avulsas · Plástico Preta", "+ com braço") com valor/dia à direita;
+    aluguel, frete, desconto; **"Total - Pix ... R$ X"** em 28 sp (fonte dos números), forma de pagamento no meio.
+    Sem "Sai do estoque" e **sem Google Agenda**.
+  - **Cobrar com Pix** (cartão próprio, logo abaixo): título + botão **"Enviar itens"** (print do cartão Itens e
+    valores direto para o WhatsApp, só a imagem); linha "Chave: ..."; botões Copiar código / Enviar no WhatsApp;
+    QR só se ligado em Exibir. Um valor só ("Valor do pedido" = total − sinal; depois de entregue = com
+    quebras/faltas/atraso, menos sinal e caução). Mensagem do WhatsApp: título, Emissão, Entrega/Retirada com ano,
+    Recebedor, Valor, copia e cola (sem número do pedido; txid `PED`+ddMMaaHHmm). Uma mensagem só.
+  - Vistoria com total refeito (depois de entregue). Por último, o botão da próxima situação.
 - **Estoque**: aba Plástico | Metal, 3 cartões de jogos completos (um por cor, com
   "Cadeiras por mesa") e um bloco por peça com 3 cores. Só quantidades.
 - Cores e fontes do protótipo (verde #0F6B5C, Inter e Space Grotesk em `res/font`).
@@ -181,7 +185,7 @@ Na devolução, quebradas e faltando **saem do total do estoque** (regra do prot
 ## 5. Pix
 
 BR Code estático (`util/Pix.kt`), igual byte a byte ao do protótipo (teste em
-`RegrasTest`). QR com ZXing, nível M. Txid `PED<id>`. QR estático **não avisa
+`RegrasTest`). QR com ZXing, nível M. Txid `PED` + ddMMaaHHmm da emissão (`idPix` no Detalhe, desde 2026-11-28; pedido sem hora gravada fica `PED<id>`). QR estático **não avisa
 quando o cliente paga** — baixa manual.
 
 ---
@@ -226,7 +230,16 @@ quando o cliente paga** — baixa manual.
    acompanham as cores novas das situações — sem resposta.
 10. Ideias do site Simples Agenda que ele **descartou** (2026-11-26: "se não dá para usar, ignora").
 
-Ideias para depois: contrato/recibo em PDF, fotos da entrega, relatório de
+11. **Recibo em PDF depois do pagamento** (pedido do usuário em 2026-11-28, "depois eu vou pensar melhor"):
+    botão de emissão de recibo, para usar **depois que o cliente pagar**, que gera um PDF para mandar a ele.
+    Não implementar antes de ele detalhar. Diferente da cobrança: a imagem "Pedido"/"Resumo do pedido" desenhada
+    foi rejeitada em 2026-11-28; o que existe hoje é o print dos Itens e valores ("Enviar itens").
+12. Ideias levantadas em 2026-11-28 e **deixadas de lado por ele** ("não faça nada"): agrupar pedidos por
+    telefone (sugerido: lupa de busca por nome/telefone em todos os meses, ou "outros pedidos deste cliente");
+    quadrinho de simulação do total no Novo pedido; textos "(opcional)" no Config. Pix; botão vermelho também
+    quando a quantidade passa do livre.
+
+Ideias para depois: contrato em PDF, fotos da entrega, relatório de
 faturamento, disponibilidade por cor no Início, itens extras (toalha, lona).
 
 ## 8. Como testar (obrigatório antes de dizer que está pronto)
@@ -393,3 +406,27 @@ conexão. Achei varrendo as portas TCP 30000–50000 do IP do celular (script Py
 - **2026-11-27** — Detalhe: topo "#N · emissão..." de volta a 12 sp, alinhado à esquerda (logo após "‹ Pedidos"), selo à direita. Cartões mais juntos (16→6 dp entre eles) e mais baixos (margem interna 14/12 dp, `PAD_CARTAO`).
 - **2026-11-27** — Detalhe, arranjo do usuário: nome do cliente sozinho; quadro de contato com Entrega/Retirada (dd/MM/aaaa, uma embaixo da outra) + botão WhatsApp na mesma linha; embaixo endereço/referência e, à direita, o telefone (abre o discador).
   Ajuste: Entrega/Retirada numa linha só (11 sp) e botão WhatsApp compacto (30 dp de altura, só texto) na mesma linha.
+- **2026-11-28** — Detalhe, Itens e valores: a forma de pagamento (Pix, Dinheiro...) saiu da linha própria e foi para a linha do "Total do aluguel", sem rótulo, em cinza ao lado do título separada por hífen ("Total do aluguel - Pix"); valor continua à direita.
+- **2026-11-28** — Detalhe: botões "Editar pedido"/"Excluir pedido" viraram dois ícones (lápis verde, lixeira vermelha; 22 dp em área de toque de 30 dp) à direita, na linha do nome do cliente. Nome numa linha só, cortado com "...". Saiu a frase "Pedido já entregue não pode ser editado, só excluído." (entregue/devolvido mostra só a lixeira).
+- **2026-11-28** — Detalhe, quadro de contato: Entrega/Retirada + WhatsApp em cima; endereço sozinho na linha dele; telefone desceu para a linha da referência, à direita (sem referência, fica sozinho à direita nessa linha).
+- **2026-11-28** — Ícones editar/excluir com 14 dp de vão entre eles.
+- **2026-11-28** — Detalhe: na linha do título "Itens e valores", à direita, "Jogo: 1 mesa × N cadeiras" (12 sp, cinza), com o N congelado nas linhas de jogo do pedido (veio do Estoque ao salvar). Só aparece se o pedido tem jogo; Ns diferentes viram "4 ou 6".
+- **2026-11-28** — Detalhe, linhas de jogo numa linha só: "1 jogo · Plástico Preta" (+ " com braço" se a cadeira tiver braço) e o valor/dia à direita. Avulsos continuam com título + descrição (ele mexe depois). `LinhaPedido.descricao` não mudou (usada em outros lugares).
+- **2026-11-28** — Detalhe: avulsos também numa linha só ("2 mesas avulsas · Plástico Preta", cadeira com braço ganha " com braço").
+- **2026-11-28** — Mensagem do Pix: "emitido em" virou "emissão" e Entrega/Retirada com o ano (dd/MM/aaaa). O resto igual.
+- **2026-11-28** — Mensagem do Pix sem o número do pedido nem a palavra "Pedido" (número sequencial contaria ao cliente quantos pedidos há): título, "Emissão dd/MM/aaaa às HH:mm", Entrega/Retirada com ano, Recebedor, Valor, copia e cola. 
+- **2026-11-28** — Txid do Pix trocado de `PED<id>` para `PED` + data e hora da emissão (ex.: PED2811261006), para não expor a contagem de pedidos no extrato.
+- **2026-11-28** — Detalhe: topo "#N · Emissão ..." com E maiúsculo; cartão Pix só com o título "Cobrar com Pix" (saiu a linha "Copia e cola para enviar ao cliente").
+- **2026-11-28** — Detalhe, Itens e valores: "Total do aluguel" virou "Total"; "Total" e o valor com a mesma fonte e tamanho do valor do Pix (`Numero`, 28 sp); forma de pagamento continua entre eles. Ele vai remover a parte de baixo depois (ainda não).
+- **2026-11-28** — Detalhe: botões "Copiar código" e "Enviar no WhatsApp" também logo abaixo da linha Total, no cartão Itens e valores (só os botões). O cartão "Cobrar com Pix" de baixo continua (ele vai decidir se remove). Pix calculado uma vez no topo (`codigoPix`, `textoPix`, `BotoesPix`).
+- **2026-11-28** — Detalhe: cartão "Cobrar com Pix" separado **removido**. Dentro de Itens e valores, abaixo do Total (e do sinal/caução, se aparecerem): ícone QR + "Cobrar com Pix", os botões Copiar código / Enviar no WhatsApp, e a imagem do QR só com Exibir → QR Code ligado. Saíram da tela: o quadro com o valor do Pix, nome/cidade/chave e o texto do copia e cola (o valor do Pix segue na mensagem). Sem chave: aviso; nada a cobrar: frase.
+- **2026-11-28** — Detalhe: "Cobrar com Pix" voltou a ser cartão próprio, logo abaixo de Itens e valores (antes da vistoria), compacto: ícone + título + a chave Pix cadastrada à direita (12 sp, cinza), botões Copiar código / Enviar no WhatsApp, QR só com Exibir ligado.
+- **2026-11-28** — Cobrar com Pix: a chave saiu da linha do título e ganhou linha própria embaixo ("Chave: ...", 13 sp, largura toda).
+- **2026-11-28** — **Enviar no WhatsApp agora manda imagem "Resumo do pedido"** (nome escolhido: não é recibo, vai antes do pagamento). PNG 1080 px desenhado com Canvas no celular (`util/ResumoImagem.kt`): faixa verde com título, emissão, cliente, entrega/retirada, itens numa linha ("1 jogo · Plástico Preta", formação do jogo à direita), aluguel, frete/desconto só se > 0, Total grande com forma de pagamento, sinal/caução se aparecem, avarias/atraso depois da entrega, quadro do Pix (valor a pagar, recebedor, chave, QR só se Exibir → QR ligado). Legenda = **só o código Pix** (copiar a legenda inteira cola direto no banco). Envio por `ACTION_SEND` com FileProvider (`${applicationId}.arquivos`, `res/xml/arquivos.xml`, cache/compartilhar) — sem permissão nova; tenta abrir direto a conversa com o extra não oficial `jid`, senão o WhatsApp pede o contato. `textoPix` (mensagem só de texto) ficou no código de reserva. **A conferir no celular:** se o "Copiar Pix" do WhatsApp aparece na legenda e se o `jid` abre a conversa certa.
+- **2026-11-28** — Título da imagem trocado para **"Pedido"** (escolha dele, no lugar de "Resumo do pedido"); arquivo `pedido.png`.
+- **2026-11-28** — Imagem **desfeita**: ele não gostou ("vou pensar em outra maneira, talvez outro botão"). Enviar no WhatsApp voltou à mensagem de texto (título, Emissão, Entrega/Retirada, Recebedor, Valor, copia e cola). `util/ResumoImagem.kt` e o FileProvider ficaram no código **sem uso**, para a ideia nova dele; apagar se ele desistir.
+- **2026-11-28** — Botão WhatsApp do quadro de contato ganhou o ícone de telefone (o mesmo do número) antes do texto. Continua abrindo a conversa, não a chamada.
+- **2026-11-28** — Novo pedido, lista de itens adicionados: mesmo padrão do Detalhe, "1 jogo · Plástico Preta" numa linha, valor/dia embaixo. A função `detalheLinha` (usada no Detalhe e no Novo) está em `util/ResumoImagem.kt`: se apagar a imagem, **mover essa função** antes.
+- **2026-11-28** — Novo pedido: cartão de cor com 0 livres fica inteiro vermelho (fundo vermelho claro, borda e número vermelhos); com a cor sem estoque marcada, o botão "Adicionar ao pedido" fica vermelho (`EstiloBotao.ALERTA`). **Só aviso, não bloqueia** (pedido dele).
+- **2026-11-28** — Lista de Pedidos: cartão mostra "#N · dd/MM/aaaa a dd/MM/aaaa" (com o ano). O Início continua sem ano (`periodo()`).
+- **2026-11-28** — Cobrar com Pix: botão compacto **"Enviar itens"** na linha do título. Tira print só do cartão Itens e valores (`rememberGraphicsLayer` + `drawWithContent`), põe sobre o fundo da tela com margem e abre o WhatsApp com a imagem, sem texto (`util/Compartilhar.kt`: `imagemNoWhatsApp`, `comMargem`, e `detalheLinha` mudou para cá). `ResumoImagem.kt` (a imagem desenhada que ele rejeitou) foi **apagado**. Conferir no celular: se abre direto a conversa do cliente (extra `jid`).

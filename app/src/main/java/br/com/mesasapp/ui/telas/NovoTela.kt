@@ -93,6 +93,7 @@ import br.com.mesasapp.ui.comum.T
 import br.com.mesasapp.ui.comum.Titulo
 import br.com.mesasapp.ui.comum.Tracejado
 import br.com.mesasapp.ui.theme.Cores
+import br.com.mesasapp.util.detalheLinha
 import br.com.mesasapp.util.Datas
 import br.com.mesasapp.util.formatAsBrl
 import java.time.LocalDate
@@ -185,7 +186,15 @@ fun NovoTela(vm: MesasViewModel) {
 
             Cartao {
                 T("Itens", 15.sp, 600)
-                SeletorModelo(vm, filtro, precos, estoque) { id -> livre(id) - (c.uso[id] ?: 0) }
+                val livresAgora: (String) -> Int = { id -> livre(id) - (c.uso[id] ?: 0) }
+                SeletorModelo(vm, filtro, precos, estoque, livresAgora)
+                // Sem estoque livre na cor marcada: botao vermelho so de aviso, sem bloquear
+                // (pedido do usuario em 2026-11-28).
+                val semEstoque = when (item.tipo) {
+                    TipoLinha.JOGO -> minOf(livresAgora(item.mesaId), livresAgora(item.cadId) / precos.cadeirasPorMesa(item.mesaId))
+                    TipoLinha.MESA -> livresAgora(item.mesaId)
+                    TipoLinha.CADEIRA -> livresAgora(item.cadId)
+                } <= 0
 
                 val unit = when (item.tipo) {
                     TipoLinha.JOGO -> precos.precoJogo(item.mesaId, item.cadId)
@@ -212,7 +221,7 @@ fun NovoTela(vm: MesasViewModel) {
                 Column(Modifier.bringIntoViewRequester(verItens), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Botao(
                         "Adicionar ao pedido", { vm.adicionarItem() }, Modifier.fillMaxWidth().testTag("botao_adicionar"),
-                        estilo = EstiloBotao.SUAVE, erro = erroItens
+                        estilo = if (semEstoque) EstiloBotao.ALERTA else EstiloBotao.SUAVE, erro = erroItens
                     )
                     if (erroItens) T("Adicione pelo menos um item ao pedido", 12.sp, 600, Cores.Erro)
                 }
@@ -224,8 +233,13 @@ fun NovoTela(vm: MesasViewModel) {
                         linhas.forEachIndexed { i, l ->
                             Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Column(Modifier.weight(1f)) {
-                                    T(l.titulo, 14.sp, 600)
-                                    T(l.descricao, 12.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
+                                    // Mesmo padrao do Detalhe (pedido do usuario em 2026-11-28):
+                                    // "1 jogo · Plástico Preta" numa linha so.
+                                    val detalhe = detalheLinha(l)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        T(l.titulo, 14.sp, 600, umaLinha = true)
+                                        if (detalhe != null) T(" · $detalhe", 13.sp, 400, Cores.Suave, umaLinha = true)
+                                    }
                                     T(l.diariaCentavos.formatAsBrl() + "/dia", 12.sp, 400, Cores.Texto2, Modifier.padding(top = 2.dp))
                                 }
                                 Box(
@@ -437,10 +451,15 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
             }.coerceAtLeast(0)
             val sel = cor == atual.cor && mat == atual.material
             val forma = RoundedCornerShape(14.dp)
+            // Zero livre: cartao inteiro em vermelho, so de aviso (pedido do usuario em 2026-11-28).
+            val zero = n == 0
             Column(
                 Modifier.weight(1f).clip(forma)
-                    .background(if (sel) Cores.VerdeClaro else Cores.Superficie)
-                    .border(if (sel) 2.dp else 1.dp, if (sel) Cores.Destaque else Cores.Borda, forma)
+                    .background(if (zero) Cores.Erro.copy(alpha = if (sel) 0.18f else 0.10f) else if (sel) Cores.VerdeClaro else Cores.Superficie)
+                    .border(
+                        if (sel) 2.dp else 1.dp,
+                        if (zero) Cores.Erro else if (sel) Cores.Destaque else Cores.Borda, forma
+                    )
                     .clickable(role = Role.Button) { escolher(mat, cor, braco) }
                     .padding(horizontal = 10.dp, vertical = 12.dp)
                     .testTag("cor_${cor.name}"),
@@ -450,7 +469,7 @@ private fun SeletorModelo(vm: MesasViewModel, filtro: FiltroMaterial, precos: Pr
                     Bolinha(Color(cor.argb))
                     T(cor.rotulo, 13.sp, 600, umaLinha = true)
                 }
-                Numero(n.toString(), 26.sp, if (n > 0) Cores.Texto else Cores.Laranja)
+                Numero(n.toString(), 26.sp, if (n > 0) Cores.Texto else Cores.Erro)
                 T(if (item.tipo == TipoLinha.JOGO) "jogos livres" else "livres", 11.sp, 400, Cores.Suave, umaLinha = true)
             }
         }

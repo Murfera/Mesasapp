@@ -361,6 +361,8 @@ fun Botao(
         EstiloBotao.SUAVE -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, Cores.Destaque)
         EstiloBotao.SUAVE_SEM_BORDA -> Triple(Cores.VerdeClaro, Cores.VerdeEscuro, null)
         EstiloBotao.NEUTRO -> Triple(Cores.Superficie, Cores.Texto, Cores.BordaCampo)
+        // Aviso sem bloquear (ex.: item sem estoque livre nas datas).
+        EstiloBotao.ALERTA -> Triple(Cores.Erro.copy(alpha = 0.12f), Cores.Erro, Cores.Erro)
     }
     // Erro: borda vermelha mais grossa, para apontar o passo que faltou.
     val borda = if (erro) Cores.Erro else bordaEstilo
@@ -380,7 +382,7 @@ fun Botao(
     }
 }
 
-enum class EstiloBotao { PRIMARIO, CONTORNO, SUAVE, SUAVE_SEM_BORDA, NEUTRO }
+enum class EstiloBotao { PRIMARIO, CONTORNO, SUAVE, SUAVE_SEM_BORDA, NEUTRO, ALERTA }
 
 /** Botao quadrado de 44 com - ou +. */
 @Composable

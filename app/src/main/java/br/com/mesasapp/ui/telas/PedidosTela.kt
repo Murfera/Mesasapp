@@ -123,7 +123,7 @@ fun PedidosTela(vm: MesasViewModel) {
                 aoTocar = { vm.abrirPedido(o.id) }
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    T("#${o.id} · ${periodo(o)}", 12.sp, 400, Cores.Texto2)
+                    T("#${o.id} · ${Datas.formatar(o.entrega)} a ${Datas.formatar(o.retirada)}", 12.sp, 400, Cores.Texto2)
                     Pilula(o.status.rotulo, Cores.Superficie, corTexto)
                 }
                 T(o.cliente, 16.sp, 600)

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import br.com.mesasapp.domain.Catalogo
 import br.com.mesasapp.domain.MULTIPLICAR_POR_DIAS
 import br.com.mesasapp.domain.StatusPedido
+import br.com.mesasapp.domain.TipoLinha
 import br.com.mesasapp.domain.fechamento
 import br.com.mesasapp.ui.MesasViewModel
 import br.com.mesasapp.ui.Tela
@@ -76,9 +78,20 @@ import br.com.mesasapp.ui.comum.Titulo
 import br.com.mesasapp.ui.comum.Tracejado
 import br.com.mesasapp.ui.comum.Voltar
 import br.com.mesasapp.ui.theme.Cores
+import br.com.mesasapp.ui.theme.SpaceGrotesk
 import br.com.mesasapp.util.Datas
 import br.com.mesasapp.util.Links
 import br.com.mesasapp.util.Pix
+import br.com.mesasapp.util.Compartilhar
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.outlined.Image
+import kotlinx.coroutines.launch
+import br.com.mesasapp.util.detalheLinha
+import androidx.compose.ui.graphics.asAndroidBitmap
 import br.com.mesasapp.util.formatAsBrl
 
 /** Margem interna dos cartoes do detalhe: menor que o padrao, para caber mais na tela. */
@@ -103,6 +116,9 @@ fun DetalheTela(vm: MesasViewModel) {
         if (o == null) { Voltar("Pedidos") { vm.irPara(Tela.PEDIDOS) }; return@Column }
 
         val c = o.conta
+        val camadaItens = rememberGraphicsLayer()
+        val escopo = rememberCoroutineScope()
+        val fundoPrint = Cores.Fundo.toArgb()
         val editavel = o.status == StatusPedido.ENTREGUE
         val fec = fechamento(o, vm.quebradas, vm.faltando, vm.atraso)
         // Seguem o menu > Exibir. Valor ja gravado continua visivel mesmo com a chave
@@ -110,33 +126,73 @@ fun DetalheTela(vm: MesasViewModel) {
         val mostraSinal = exibir.mostrarSinal || o.sinalCentavos > 0
         val mostraCaucao = exibir.mostrarCaucao || o.caucaoCentavos > 0
 
+        // Pix calculado uma vez: os botoes aparecem abaixo do Total e no cartao "Cobrar com Pix".
+        // Um valor so (pedido do usuario): o cliente paga na retirada, entao depois da entrega
+        // ja entram quebras, faltas e atraso. Sinal e caucao, se ligados em Exibir, ja vem descontados.
+        val temChave = pixCfg.chave.isNotBlank()
+        val aposVistoria = o.status == StatusPedido.ENTREGUE || o.status == StatusPedido.DEVOLVIDO
+        val valorPix = maxOf(0L, if (aposVistoria) fec.restoCentavos else c.saldoCentavos)
+        val codigoPix = if (temChave && valorPix > 0) remember(pixCfg, valorPix, o.id, o.criadoEmEpochSeg) {
+            Pix.copiaECola(pixCfg.chave, pixCfg.nome, pixCfg.cidade, valorPix, idPix(o.id, o.criadoEmEpochSeg))
+        } else null
+        val nomePix = Pix.limpar(pixCfg.nome, 25).ifBlank { "RECEBEDOR" }
+        // Mensagem enxuta (pedido do usuario): o essencial, com o codigo no fim para copiar.
+        // Sem o numero do pedido (2026-11-28): sequencial, contaria ao cliente
+        // quantos pedidos ha. Recebedor antes do valor, a pedido dele.
+        val textoPix = codigoPix?.let { cod ->
+            "*Aluguel de mesas e cadeiras*\n" +
+                emitido(o.criadoEmEpochSeg)?.let { "$it\n" }.orEmpty() +
+                "Entrega: ${Datas.formatar(o.entrega)} · Retirada: ${Datas.formatar(o.retirada)}\n" +
+                "Recebedor: ${pixCfg.nome.trim().ifBlank { nomePix }}\n" +
+                "Valor: ${valorPix.formatAsBrl()}\n\n" +
+                "Pix copia e cola:\n" + cod
+        }
+        @Composable
+        fun BotoesPix() {
+            if (codigoPix == null || textoPix == null) return
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Botao(
+                    if (vm.pixCopiado) "Copiado!" else "Copiar código",
+                    { clipboard.setText(AnnotatedString(codigoPix)); vm.pixCopiado = true },
+                    Modifier.weight(1f), estilo = EstiloBotao.CONTORNO
+                )
+                // Mensagem de texto com o copia e cola no fim (2026-11-28: a imagem foi testada e
+                // ele nao gostou; ResumoImagem fica no codigo, sem uso, para outra ideia dele).
+                Botao("Enviar no WhatsApp", { Links.abrir(contexto, Links.whatsApp(o.telefone, textoPix)) }, Modifier.weight(1.3f)) {
+                    Icon(Icons.Outlined.Chat, null, tint = Cores.SobreVerde, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+
         // Numero, emissao e situacao na linha do "‹ Pedidos" (pedido do usuario), no canto direito.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             Voltar("Pedidos") { vm.irPara(Tela.PEDIDOS) }
             T(
                 // Curto para caber numa linha: "#2 · emissão 27/11/2026  14:35" (pedido do usuario).
-                "#${o.id}" + (if (o.criadoEmEpochSeg > 0) " · emissão ${Datas.formatarData(o.criadoEmEpochSeg)}  ${Datas.formatarHora(o.criadoEmEpochSeg)}" else ""),
+                "#${o.id}" + (if (o.criadoEmEpochSeg > 0) " · Emissão ${Datas.formatarData(o.criadoEmEpochSeg)}  ${Datas.formatarHora(o.criadoEmEpochSeg)}" else ""),
                 12.sp, 400, Cores.Suave,
                 Modifier.weight(1f).testTag("emitido")
             )
             PilulaStatus(o.status, Modifier.testTag("status_pedido"))
         }
-        Titulo(o.cliente)
-
-        // No topo (pedido do usuario). Editar so antes da entrega; excluir sempre, com confirmacao.
+        // Nome do cliente numa linha so (corta com "..."), com os icones de editar e excluir
+        // a direita, do tamanho da linha (pedido do usuario). Editar so antes da entrega;
+        // excluir sempre, com confirmacao.
         var confirmarExclusao by remember { mutableStateOf(false) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            T(o.cliente, 20.sp, 600, fonte = SpaceGrotesk, modifier = Modifier.weight(1f), umaLinha = true)
             if (vm.podeEditar(o)) {
-                Botao("Editar pedido", { vm.editarPedido(o) }, Modifier.weight(1f).testTag("botao_editar"), estilo = EstiloBotao.CONTORNO) {
-                    Icon(Icons.Outlined.Edit, null, tint = Cores.Destaque, modifier = Modifier.size(18.dp))
-                }
+                Box(
+                    Modifier.padding(start = 6.dp).size(30.dp).clip(RoundedCornerShape(8.dp))
+                        .clickable(role = Role.Button) { vm.editarPedido(o) }.testTag("botao_editar"),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.Edit, "Editar pedido", tint = Cores.Destaque, modifier = Modifier.size(22.dp)) }
             }
-            Botao("Excluir pedido", { confirmarExclusao = true }, Modifier.weight(1f).testTag("botao_excluir"), estilo = EstiloBotao.NEUTRO) {
-                Icon(Icons.Outlined.Delete, null, tint = Cores.Erro, modifier = Modifier.size(18.dp))
-            }
-        }
-        if (!vm.podeEditar(o)) {
-            T("Pedido já entregue não pode ser editado, só excluído.", 12.sp, 400, Cores.Suave)
+            Box(
+                Modifier.padding(start = 14.dp).size(30.dp).clip(RoundedCornerShape(8.dp))
+                    .clickable(role = Role.Button) { confirmarExclusao = true }.testTag("botao_excluir"),
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Outlined.Delete, "Excluir pedido", tint = Cores.Erro, modifier = Modifier.size(22.dp)) }
         }
         // Avisos de sucesso (pedido alterado, confirmado, entregue...) viram um pop-up rapido,
         // sem ocupar uma linha da tela (pedido do usuario). Erro continua fixo na tela.
@@ -166,21 +222,31 @@ fun DetalheTela(vm: MesasViewModel) {
                             .clickable(role = Role.Button) { Links.abrir(contexto, Links.whatsApp(o.telefone, "")) }
                             .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center
-                    ) { T("WhatsApp", 12.sp, 600, Cores.Destaque, umaLinha = true) }
+                    ) {
+                        // Icone de telefone, o mesmo do numero embaixo (pedido do usuario em 2026-11-28).
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Icon(Icons.Outlined.Call, null, tint = Cores.Destaque, modifier = Modifier.size(14.dp))
+                            T("WhatsApp", 12.sp, 600, Cores.Destaque, umaLinha = true)
+                        }
+                    }
                 }
             }
-            val temEndereco = o.endereco.isNotBlank() || o.referencia.isNotBlank()
-            if (temEndereco || o.telefone.isNotBlank()) {
+            // Endereco numa linha; o telefone fica na linha de baixo, a direita da
+            // referencia (pedido do usuario em 2026-11-28).
+            val temEnd = o.endereco.isNotBlank()
+            val temRef = o.referencia.isNotBlank()
+            if (temEnd) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (temEndereco) {
-                        Icon(Icons.Outlined.Place, null, tint = Cores.Suave, modifier = Modifier.size(18.dp).padding(top = 2.dp))
-                        Column(Modifier.weight(1f)) {
-                            if (o.endereco.isNotBlank()) T(o.endereco, 14.sp)
-                            if (o.referencia.isNotBlank()) T(o.referencia, 13.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
-                        }
-                    } else {
-                        Box(Modifier.weight(1f))
-                    }
+                    Icon(Icons.Outlined.Place, null, tint = Cores.Suave, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                    T(o.endereco, 14.sp, modifier = Modifier.weight(1f))
+                }
+            }
+            if (temRef || o.telefone.isNotBlank()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (temEnd) Spacer(Modifier.width(18.dp))
+                    else if (temRef) Icon(Icons.Outlined.Place, null, tint = Cores.Suave, modifier = Modifier.size(18.dp))
+                    if (temRef) T(o.referencia, 13.sp, 400, Cores.Suave, Modifier.weight(1f))
+                    else Box(Modifier.weight(1f))
                     if (o.telefone.isNotBlank()) {
                         Row(
                             Modifier.clickable(role = Role.Button) { Links.ligar(contexto, o.telefone) },
@@ -194,14 +260,35 @@ fun DetalheTela(vm: MesasViewModel) {
             }
         }
 
-        Cartao(padding = PAD_CARTAO, espaco = 6.dp) {
-            T("Itens e valores", 15.sp, 600, modifier = Modifier.padding(bottom = 2.dp))
+        // A secao inteira e gravada numa camada para virar print ("Enviar itens").
+        Cartao(
+            Modifier.drawWithContent {
+                camadaItens.record { this@drawWithContent.drawContent() }
+                drawLayer(camadaItens)
+            },
+            padding = PAD_CARTAO, espaco = 6.dp
+        ) {
+            // A direita do titulo, como o jogo e formado (pedido do usuario em 2026-11-28).
+            // Usa o numero de cadeiras congelado no pedido, que veio do Estoque ao salvar.
+            val cadeirasDoJogo = o.linhas.filter { it.tipo == TipoLinha.JOGO }.map { it.cadeirasPorMesa }.distinct().sorted()
+            Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                T("Itens e valores", 15.sp, 600, modifier = Modifier.weight(1f))
+                if (cadeirasDoJogo.isNotEmpty()) {
+                    val n = cadeirasDoJogo.joinToString(" ou ")
+                    val plural = if (cadeirasDoJogo.size == 1 && cadeirasDoJogo[0] == 1) "cadeira" else "cadeiras"
+                    T("Jogo: 1 mesa × $n $plural", 12.sp, 400, Cores.Suave, Modifier.padding(start = 10.dp), umaLinha = true)
+                }
+            }
             o.linhas.forEach { l ->
                 Column {
-                    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Column(Modifier.weight(1f)) {
-                            T(l.titulo, 14.sp, 600)
-                            T(l.descricao, 12.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
+                    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // Cada linha numa linha so (pedido do usuario em 2026-11-28):
+                        // "1 jogo · Plástico Preta", "2 mesas avulsas · Plástico Preta". A
+                        // formacao do jogo esta no titulo do cartao.
+                        val detalhe = detalheLinha(l)
+                        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                            T(l.titulo, 14.sp, 600, umaLinha = true)
+                            if (detalhe != null) T(" · $detalhe", 13.sp, 400, Cores.Suave, umaLinha = true)
                         }
                         T(l.diariaCentavos.formatAsBrl() + "/dia", 13.sp, 400, Cores.Texto2)
                     }
@@ -213,12 +300,65 @@ fun DetalheTela(vm: MesasViewModel) {
             LinhaValor("Desconto", "− " + o.descontoCentavos.formatAsBrl())
             Column {
                 Tracejado()
-                LinhaValor("Total do aluguel", c.totalCentavos.formatAsBrl(), Modifier.padding(top = 6.dp), 14.sp, 600, Cores.Texto)
+                // A forma de pagamento (Pix, Dinheiro...) vai na mesma linha do total, sem rotulo.
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Numero("Total", 28.sp)
+                    if (o.pagamento.isNotBlank()) T("- " + o.pagamento, 13.sp, 400, Cores.Suave, Modifier.padding(start = 6.dp), umaLinha = true)
+                    Spacer(Modifier.weight(1f))
+                    Numero(c.totalCentavos.formatAsBrl(), 28.sp, modifier = Modifier.padding(start = 10.dp))
+                }
             }
-            // A forma de pagamento aparece sempre, com ou sem sinal e caucao.
-            LinhaValor("Forma de pagamento", o.pagamento)
             if (mostraSinal) LinhaValor("Sinal pago", o.sinalCentavos.formatAsBrl())
             if (mostraCaucao) LinhaValor("Caução recebida", o.caucaoCentavos.formatAsBrl())
+        }
+
+        // Cobrar com Pix numa secao propria, logo abaixo de Itens e valores, com a chave
+        // cadastrada na linha do titulo (pedido do usuario em 2026-11-28).
+        Cartao(padding = PAD_CARTAO, espaco = 10.dp) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Outlined.QrCode2, null, tint = Cores.Destaque, modifier = Modifier.size(22.dp))
+                T("Cobrar com Pix", 15.sp, 600, modifier = Modifier.weight(1f))
+                // Print da secao Itens e valores, direto para o WhatsApp do cliente (pedido do
+                // usuario em 2026-11-28): so a imagem, sem texto.
+                Row(
+                    Modifier.height(30.dp).clip(RoundedCornerShape(8.dp)).border(1.dp, Cores.Destaque, RoundedCornerShape(8.dp))
+                        .clickable(role = Role.Button) {
+                            escopo.launch {
+                                val print = camadaItens.toImageBitmap().asAndroidBitmap()
+                                Compartilhar.imagemNoWhatsApp(contexto, Compartilhar.comMargem(print, fundoPrint), o.telefone)
+                            }
+                        }
+                        .padding(horizontal = 10.dp).testTag("enviar_itens"),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(Icons.Outlined.Image, null, tint = Cores.Destaque, modifier = Modifier.size(14.dp))
+                    T("Enviar itens", 12.sp, 600, Cores.Destaque, umaLinha = true)
+                }
+            }
+            // A chave cadastrada numa linha so dela, com a largura toda (pedido do usuario).
+            if (temChave) T("Chave: " + pixCfg.chave.trim(), 13.sp, 400, Cores.Texto2, Modifier.fillMaxWidth())
+            when {
+                !temChave -> Aviso("Cadastre sua chave Pix no menu ⋮ → Config. Pix para gerar a cobrança.", false)
+                codigoPix == null -> T("Nada a cobrar neste pedido.", 13.sp, 400, Cores.Suave)
+                else -> {
+                    BotoesPix()
+                    // Menu > Exibir > QR Code (desligado por padrao): so entao a imagem aparece.
+                    if (exibir.mostrarQrCode) {
+                        val qr = remember(codigoPix) { Links.qr(codigoPix) }
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (qr != null) {
+                                Image(
+                                    qr, "QR Code do Pix",
+                                    Modifier.size(208.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),
+                                    filterQuality = FilterQuality.None
+                                )
+                            } else {
+                                T("QR Code indisponível aqui; use o copia e cola.", 13.sp, 400, Cores.Suave)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if (o.status == StatusPedido.ENTREGUE || o.status == StatusPedido.DEVOLVIDO) {
@@ -285,85 +425,6 @@ fun DetalheTela(vm: MesasViewModel) {
             }
         }
 
-        // --- Pix ---
-        Cartao(padding = PAD_CARTAO, espaco = 10.dp) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Icon(Icons.Outlined.QrCode2, null, tint = Cores.Destaque, modifier = Modifier.size(22.dp))
-                Column {
-                    T("Cobrar com Pix", 15.sp, 600)
-                    T(if (exibir.mostrarQrCode) "QR Code e copia e cola para enviar ao cliente." else "Copia e cola para enviar ao cliente.", 13.sp, 400, Cores.Suave, Modifier.padding(top = 2.dp))
-                }
-            }
-            val temChave = pixCfg.chave.isNotBlank()
-            if (!temChave) {
-                Aviso("Cadastre sua chave Pix no menu ⋮ → Config. Pix para gerar a cobrança.", false)
-            } else {
-                // Um valor so, calculado do pedido (pedido do usuario): o cliente paga na
-                // retirada, entao depois da entrega ja entram quebras, faltas e atraso.
-                // Sinal e caucao, se ligados em Exibir, ja vem descontados.
-                val aposVistoria = o.status == StatusPedido.ENTREGUE || o.status == StatusPedido.DEVOLVIDO
-                val rotulo = if (aposVistoria) "Valor após vistoria" else "Valor do pedido"
-                val valor = maxOf(0L, if (aposVistoria) fec.restoCentavos else c.saldoCentavos)
-                if (valor > 0) {
-                    val codigo = remember(pixCfg, valor, o.id) {
-                        Pix.copiaECola(pixCfg.chave, pixCfg.nome, pixCfg.cidade, valor, "PED${o.id}")
-                    }
-                    val qr = if (exibir.mostrarQrCode) remember(codigo) { Links.qr(codigo) } else null
-                    val nome = Pix.limpar(pixCfg.nome, 25).ifBlank { "RECEBEDOR" }
-                    val cidade = Pix.limpar(pixCfg.cidade, 15).ifBlank { "CIDADE" }
-                    Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Cores.QrFundo)
-                            .border(1.dp, Cores.Borda, RoundedCornerShape(12.dp)).padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        T(rotulo + " · pedido #${o.id}", 13.sp, 400, Cores.Suave)
-                        Numero(valor.formatAsBrl(), 28.sp, modifier = Modifier.testTag("pix_valor"))
-                        // Menu > Exibir > QR Code: desligado, fica so o copia e cola.
-                        if (!exibir.mostrarQrCode) Unit
-                        else if (qr != null) {
-                            Image(
-                                qr, "QR Code do Pix",
-                                Modifier.size(208.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),
-                                filterQuality = FilterQuality.None
-                            )
-                        } else {
-                            T("QR Code indisponível aqui; use o copia e cola.", 13.sp, 400, Cores.Suave)
-                        }
-                        T("$nome · $cidade · chave ${pixCfg.chave}", 12.sp, 400, Cores.Suave, alinhar = TextAlign.Center)
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        T("Pix copia e cola", 13.sp, 500, Cores.Texto2)
-                        T(
-                            codigo, 11.sp, 400, Cores.Texto2,
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Cores.Cinza)
-                                .padding(horizontal = 12.dp, vertical = 10.dp).testTag("pix_codigo"),
-                            fonte = FontFamily.Monospace
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Botao(
-                            if (vm.pixCopiado) "Copiado!" else "Copiar código",
-                            { clipboard.setText(AnnotatedString(codigo)); vm.pixCopiado = true },
-                            Modifier.weight(1f), estilo = EstiloBotao.CONTORNO
-                        )
-                        // Mensagem enxuta (pedido do usuario): o essencial, com o codigo no fim para copiar.
-                        val texto = "*Aluguel de mesas e cadeiras*\n" +
-                            "Pedido #${o.id}" + emitido(o.criadoEmEpochSeg)?.let { " · $it" }.orEmpty() + "\n" +
-                            "Entrega: ${Datas.dm(o.entrega)} · Retirada: ${Datas.dm(o.retirada)}\n" +
-                            "Valor: ${valor.formatAsBrl()}\n" +
-                            "Recebedor: ${pixCfg.nome.trim().ifBlank { nome }}\n\n" +
-                            "Pix copia e cola:\n" + codigo
-                        Botao("Enviar no WhatsApp", { Links.abrir(contexto, Links.whatsApp(o.telefone, texto)) }, Modifier.weight(1.3f)) {
-                            Icon(Icons.Outlined.Chat, null, tint = Cores.SobreVerde, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                } else {
-                    T("Nada a cobrar neste pedido.", 13.sp, 400, Cores.Suave)
-                }
-            }
-        }
-
         val acao = when (o.status) {
             StatusPedido.ORCAMENTO -> "Confirmar pedido"
             StatusPedido.CONFIRMADO -> "Marcar como entregue"
@@ -398,9 +459,19 @@ fun DetalheTela(vm: MesasViewModel) {
     }
 }
 
-/** "emitido em 26/11/2026 às 14:35" (pedido antigo sem a hora gravada: null). */
+/**
+ * Identificacao do Pix (txid), que pode aparecer no extrato: data e hora da emissao,
+ * "PED2811261006", para nao contar ao cliente quantos pedidos ha (2026-11-28). Pedido
+ * antigo sem a hora gravada fica com o numero.
+ */
+private fun idPix(id: Long, criadoEmEpochSeg: Long): String =
+    if (criadoEmEpochSeg <= 0) "PED$id"
+    else "PED" + Datas.formatarData(criadoEmEpochSeg).replace("/", "").let { it.substring(0, 4) + it.substring(6) } +
+        Datas.formatarHora(criadoEmEpochSeg).replace(":", "")
+
+/** "Emissão 26/11/2026 às 14:35" (pedido antigo sem a hora gravada: null). */
 private fun emitido(epochSeg: Long): String? =
-    if (epochSeg <= 0) null else "emitido em ${Datas.formatarData(epochSeg)} às ${Datas.formatarHora(epochSeg)}"
+    if (epochSeg <= 0) null else "Emissão ${Datas.formatarData(epochSeg)} às ${Datas.formatarHora(epochSeg)}"
 
 @Composable
 private fun LinhaPasso(rotulo: String, valor: Int, editavel: Boolean, descricao: String, tag: String, passo: (Int) -> Unit) {
